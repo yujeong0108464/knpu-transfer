@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>경찰대학 편입생 졸업학점 계산기</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#EDF0F4; --surface:#FFFFFF; --soft:#F4F6F9; --ink:#12213C; --ink2:#4A586F; --line:#D3DAE5;
+  --accent:#1F4FA8; --accent-ink:#FFFFFF;
+  --ok:#17785A; --okbg:#E1F2EB; --prog:#9A5E08; --progbg:#FBEFD9; --miss:#B23A2E; --missbg:#F8E4E1;
+  --bar-miss:#D9DFE9;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1526; --surface:#162139; --soft:#1B2945; --ink:#E7EDF8; --ink2:#A3B2CC; --line:#2C3A58;
+    --accent:#7BA5FF; --accent-ink:#0B1530;
+    --ok:#4FD1A1; --okbg:#133A2F; --prog:#F0B554; --progbg:#41320F; --miss:#FF8F80; --missbg:#4A1F1B;
+    --bar-miss:#2C3A58; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1526; --surface:#162139; --soft:#1B2945; --ink:#E7EDF8; --ink2:#A3B2CC; --line:#2C3A58;
+  --accent:#7BA5FF; --accent-ink:#0B1530;
+  --ok:#4FD1A1; --okbg:#133A2F; --prog:#F0B554; --progbg:#41320F; --miss:#FF8F80; --missbg:#4A1F1B;
+  --bar-miss:#2C3A58; color-scheme:dark;
+}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 76px);}
+*,*::before,*::after{box-sizing:border-box;}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"IBM Plex Sans KR","Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  font-size:15px; line-height:1.55; -webkit-text-size-adjust:100%;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--surface);z-index:30;}
+.num{font-variant-numeric:tabular-nums;}
+button,input,select,textarea{font:inherit;color:inherit;}
+button{cursor:pointer;}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px;}
+.wrap{max-width:960px;margin:0 auto;padding:0 16px 56px;}
+
+/* sticky bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line);}
+.bar-in{max-width:960px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.bar .t{font-weight:600;font-size:14px;color:var(--ink2);}
+.bar .big{font-size:26px;font-weight:700;line-height:1;letter-spacing:-0.01em;}
+.bar .big small{font-size:14px;font-weight:500;margin-left:2px;color:var(--ink2);}
+.bar .mini{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--ink2);}
+.bar .mini b{color:var(--ink);font-weight:600;}
+.bar .sp{flex:1;}
+.chk{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink2);cursor:pointer;user-select:none;}
+.chk input{width:18px;height:18px;accent-color:var(--accent);}
+
+header.top{padding:26px 0 8px;}
+header.top h1{margin:0;font-size:24px;line-height:1.25;letter-spacing:-0.02em;}
+header.top p{margin:6px 0 0;color:var(--ink2);font-size:14px;max-width:62ch;}
+header.top .by{margin-top:8px;font-size:13px;color:var(--ink2);}
+header.top .by b{color:var(--ink);font-weight:600;}
+
+/* ledger */
+.ledger{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;margin-top:14px;}
+.warn{background:var(--progbg);color:var(--prog);border-radius:8px;padding:9px 12px;font-size:13.5px;margin-bottom:14px;font-weight:500;}
+.lg-top{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:14px;}
+.lg-top .n{font-size:56px;font-weight:700;line-height:1;letter-spacing:-0.03em;}
+.lg-top .n small{font-size:18px;font-weight:500;color:var(--ink2);margin-left:4px;letter-spacing:0;}
+.lg-top .d{color:var(--ink2);font-size:14px;padding-bottom:4px;}
+.lg-top .d b{color:var(--ink);}
+.lrow{display:grid;grid-template-columns:104px 1fr 150px;gap:6px 14px;align-items:center;padding:9px 0;border-top:1px solid var(--line);}
+.lrow .nm{font-weight:600;}
+.lrow .nm small{display:block;font-weight:400;color:var(--ink2);font-size:12px;}
+.track{height:12px;border-radius:6px;background:var(--bar-miss);display:flex;overflow:hidden;}
+.track i{display:block;height:100%;}
+.track .d{background:var(--ok);} .track .p{background:var(--prog);}
+.lrow .rt{text-align:right;font-size:13px;color:var(--ink2);}
+.lrow .rt b{font-size:17px;color:var(--ink);font-weight:700;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2);margin-top:10px;}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--bar-miss);}
+.legend .ld::before{background:var(--ok);} .legend .lp::before{background:var(--prog);}
+
+.plan{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:14px;}
+.plan input{width:62px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);}
+.plan .res{color:var(--ink2);}
+.plan .res b{color:var(--ink);}
+.plan .res.bad b{color:var(--miss);}
+
+/* tabs */
+nav.tabs{display:flex;gap:4px;overflow-x:auto;margin:18px 0 12px;border-bottom:1px solid var(--line);scrollbar-width:thin;}
+nav.tabs button{flex:0 0 auto;border:0;background:none;padding:10px 14px;font-weight:600;font-size:14.5px;color:var(--ink2);border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap;}
+nav.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);}
+nav.tabs .cnt{display:inline-block;margin-left:6px;font-size:12px;font-weight:600;padding:1px 7px;border-radius:9px;background:var(--missbg);color:var(--miss);}
+nav.tabs .cnt.z{background:var(--okbg);color:var(--ok);}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:12px;}
+.card h2{margin:0 0 4px;font-size:17px;letter-spacing:-0.01em;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.card h2 .tg{font-size:13px;font-weight:500;color:var(--ink2);}
+.card h3{margin:16px 0 4px;font-size:14.5px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;}
+.card h3 .need{font-size:12.5px;font-weight:500;color:var(--ink2);}
+.note{font-size:13px;color:var(--ink2);margin:4px 0 8px;max-width:78ch;}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--soft);color:var(--ink2);}
+.pill.ok{background:var(--okbg);color:var(--ok);} .pill.no{background:var(--missbg);color:var(--miss);} .pill.pg{background:var(--progbg);color:var(--prog);}
+
+/* course row */
+.crs{display:grid;grid-template-columns:1fr 54px auto;gap:8px;align-items:center;padding:7px 0;border-top:1px solid var(--line);}
+.crs .nm{font-size:14.5px;}
+.crs .cr{font-size:13px;color:var(--ink2);text-align:right;}
+.crs.s1 .nm{color:var(--ok);font-weight:600;}
+.crs.s2 .nm{color:var(--prog);font-weight:600;}
+.tag{display:inline-block;margin-left:6px;font-size:11px;font-weight:600;padding:0 6px;border-radius:4px;background:var(--soft);color:var(--ink2);vertical-align:1px;}
+.tag.R{background:#E4ECFB;color:#27498F;} .tag.H{background:#EFE6F8;color:#5B3A87;} .tag.G{background:#F9E6EF;color:#8F2B5C;}
+.tag.new{background:var(--progbg);color:var(--prog);}
+:root[data-theme="dark"] .tag.R{background:#22365E;color:#B7CDFF;}
+:root[data-theme="dark"] .tag.H{background:#3A2C55;color:#D9C6F5;}
+:root[data-theme="dark"] .tag.G{background:#55283F;color:#F5C5DB;}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .tag.R{background:#22365E;color:#B7CDFF;}
+  :root:not([data-theme="light"]) .tag.H{background:#3A2C55;color:#D9C6F5;}
+  :root:not([data-theme="light"]) .tag.G{background:#55283F;color:#F5C5DB;}
+}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+.seg button{border:0;background:var(--surface);padding:5px 10px;font-size:13px;color:var(--ink2);border-left:1px solid var(--line);min-width:52px;}
+.seg button:first-child{border-left:0;}
+.seg button[aria-pressed="true"][data-v="1"]{background:var(--ok);color:#fff;}
+.seg button[aria-pressed="true"][data-v="2"]{background:var(--prog);color:#fff;}
+.seg button[aria-pressed="true"][data-v="0"]{background:var(--soft);color:var(--ink);font-weight:600;}
+:root[data-theme="dark"] .seg button[aria-pressed="true"][data-v="1"],:root[data-theme="dark"] .seg button[aria-pressed="true"][data-v="2"]{color:#0B1530;}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .seg button[aria-pressed="true"][data-v="1"],:root:not([data-theme="light"]) .seg button[aria-pressed="true"][data-v="2"]{color:#0B1530;}}
+.pickbox{border:1px dashed var(--line);border-radius:8px;padding:2px 10px;margin:6px 0;}
+.pickbox .lab{font-size:12.5px;color:var(--ink2);margin-top:6px;}
+
+details.grp{border-top:1px solid var(--line);margin-top:10px;padding-top:8px;}
+details.grp>summary{cursor:pointer;font-weight:600;font-size:14.5px;list-style:none;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;padding:4px 0;}
+details.grp>summary::-webkit-details-marker{display:none;}
+details.grp>summary::before{content:"▸";color:var(--ink2);font-size:12px;width:12px;}
+details.grp[open]>summary::before{content:"▾";}
+
+.stp{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;}
+.stp .lb{min-width:120px;font-size:14.5px;}
+.stp button{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:18px;line-height:1;}
+.stp .v{min-width:28px;text-align:center;font-weight:700;}
+
+.fm{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:8px;}
+.fm label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--ink2);}
+.fm input,.fm select,.inp{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:14.5px;color:var(--ink);}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:8px 14px;border-radius:8px;font-weight:600;font-size:14px;}
+.btn.ghost{background:none;color:var(--accent);}
+.btn.danger{border-color:var(--miss);color:var(--miss);background:none;}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0;}
+.opt{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;font-size:14px;}
+.opt input{accent-color:var(--accent);width:16px;height:16px;margin:0;}
+.opt.on{border-color:var(--accent);background:var(--soft);font-weight:600;}
+.xl{display:grid;grid-template-columns:1fr auto auto;gap:6px 10px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:14px;}
+.xl .sub{font-size:12.5px;color:var(--ink2);}
+.ncl{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--line);}
+.ncl input[type=checkbox]{width:20px;height:20px;margin-top:2px;accent-color:var(--ok);flex:none;}
+.ncl .tt{font-weight:600;font-size:14.5px;}
+.ncl .ss{font-size:12.5px;color:var(--ink2);}
+textarea.inp{width:100%;min-height:90px;font-family:ui-monospace,Consolas,monospace;font-size:12px;}
+ul.plain{margin:6px 0;padding-left:20px;} ul.plain li{margin:4px 0;font-size:14px;max-width:80ch;}
+.foot{margin-top:24px;font-size:12.5px;color:var(--ink2);}
+
+/* 남은 과목 화면 */
+.rem-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px;}
+.rem-sum .box{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+.rem-sum .box.tot{border-color:var(--accent);border-width:2px;}
+.rem-sum .k{font-size:13px;color:var(--ink2);font-weight:500;}
+.rem-sum .v{font-size:30px;font-weight:700;line-height:1.2;letter-spacing:-0.02em;}
+.rem-sum .v small{font-size:14px;font-weight:500;color:var(--ink2);margin-left:2px;}
+.rem-sum .v.z{color:var(--ok);}
+.rc-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.rc-h h2{margin:0;font-size:19px;}
+.rc-n{font-size:14px;color:var(--ink2);}
+.rc-n b{font-size:26px;color:var(--miss);font-weight:700;margin:0 2px;}
+.rc-n.z b{color:var(--ok);}
+.rg{border-top:1px solid var(--line);margin-top:14px;padding-top:12px;}
+.rg-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:2px;}
+.rg-h .t{font-weight:700;font-size:15.5px;}
+.rg-h .s{font-size:13.5px;font-weight:600;color:var(--miss);}
+.rr{display:grid;grid-template-columns:62px 1fr auto;gap:2px 12px;align-items:start;padding:9px 0;border-top:1px dashed var(--line);}
+.rg-h + .rr{border-top:0;}
+.rr .tg{display:inline-block;text-align:center;font-size:12px;font-weight:700;padding:2px 0;border-radius:6px;background:var(--soft);color:var(--ink2);}
+.rr .tg.req{background:var(--missbg);color:var(--miss);}
+.rr .tg.pk{background:var(--progbg);color:var(--prog);}
+.rr .tg.ok{background:var(--okbg);color:var(--ok);}
+.rr .nm{font-size:15px;font-weight:600;}
+.rr .nt{font-size:12.5px;color:var(--ink2);margin-top:1px;}
+.rr .cr{font-weight:700;font-size:15px;white-space:nowrap;text-align:right;}
+.rr .cr.neg{color:var(--ok);}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+.chip{font-size:12px;padding:2px 9px;border-radius:12px;background:var(--soft);color:var(--ink2);border:1px solid var(--line);}
+details.cand{margin-top:6px;}
+details.cand>summary{cursor:pointer;font-size:12.5px;color:var(--accent);font-weight:600;}
+.done-msg{padding:12px;border-radius:8px;background:var(--okbg);color:var(--ok);font-weight:600;font-size:14px;margin-top:10px;}
+.tkpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;}
+.tkpick .opt{width:100%;align-items:flex-start;}
+.tkpick .opt small{display:block;font-weight:400;color:var(--ink2);font-size:12px;}
+ul.bul{margin:6px 0 0;padding-left:20px;} ul.bul li{margin:3px 0;font-size:13.5px;}
+
+.search{margin-top:14px;display:flex;gap:8px;align-items:center;}
+.search input{flex:1;min-width:0;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:15.5px;color:var(--ink);}
+.search input:focus-visible{border-color:var(--accent);}
+.crs .cat{font-size:12px;color:var(--ink2);font-weight:400;margin-top:2px;}
+.crs.s1 .nm .cat,.crs.s2 .nm .cat{color:var(--ink2);font-weight:400;}
+mark{background:var(--progbg);color:var(--prog);border-radius:3px;padding:0 1px;}
+.qf{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;}
+.qf button{border:1px solid var(--line);background:var(--surface);padding:5px 12px;border-radius:16px;font-size:13px;color:var(--ink2);}
+.qf button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;}
+.sh{font-size:13px;font-weight:700;color:var(--ink2);margin:14px 0 2px;}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;}
+
+@media (max-width:640px){
+  .lrow{grid-template-columns:1fr;gap:4px;}
+  .lrow .rt{text-align:left;}
+  .lg-top .n{font-size:46px;}
+  .crs{grid-template-columns:1fr auto;}
+  .crs .cr{display:none;}
+  .crs .nm .c{font-size:12px;color:var(--ink2);margin-left:6px;}
+  .xl{grid-template-columns:1fr auto;}
+  .rr{grid-template-columns:52px 1fr auto;gap:2px 8px;}
+}
+@media (min-width:641px){ .crs .nm .c{display:none;} }
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<div class="wrap">
+  <header class="top">
+    <h1>경찰대학 편입생 졸업학점 계산기</h1>
+    <p>2026학년도 경찰대학 편입생 교육과정 안내서(교육과정규칙·학칙 포함)와 2026학년도 융복합트랙 학생선발 안내를 기준으로 영역별 남은 과목과 학점을 계산합니다. 입력한 내용은 이 브라우저에만 저장됩니다. 신입생과 졸업요건이 달라서 편입생만 이 계산기를 사용하세요.</p>
+    <div class="by">제작 <b>20240017 민유정</b></div>
+  </header>
+  <section id="hero"></section>
+  <div class="search"><label class="sr-only" for="q">과목 검색</label><input id="q" type="search" placeholder="과목 검색 (예: 형법, 통계, 사이버, 경찰학선택)" autocomplete="off" enterkeyhint="search"></div>
+  <nav class="tabs" id="tabs" role="tablist"></nav>
+  <div id="panels"></div>
+  <p class="foot">학칙·교육과정규칙이 개정되면 달라질 수 있습니다. 졸업 여부의 최종 판단은 학사운영계(041-968-2351)에서 확인하세요.<br>제작 20240017 민유정</p>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   데이터 (출처: 2026학년도 경찰대학 편입생 교육과정 안내서,
+   2026학년도 융복합트랙 학생선발 안내(확정))
+   ============================================================ */
+const KEY='knpu-transfer-calc-v1';
+const C={};
+function mk(id,name,cr,tags){C[id]={id:id,name:name,cr:cr,tags:tags||[]};return id;}
+
+/* 교양: 편입생은 인성교양 4학점(무도 Ⅴ~Ⅷ) */
+const HUM_MUDO=['Ⅴ','Ⅵ','Ⅶ','Ⅷ'].map(function(r,i){return mk('mu'+(i+5),'무도 '+r,1,['필수']);});
+const GY_G=mk('ss12','성인지 관점의 이해',2,['G']);
+
+/* 일반학전공 */
+const MA_BASE=[mk('ma6','경찰행정법',3),mk('ma7','헌법Ⅰ',3),mk('ma2','행정학개론',2),mk('ma_pf','정책형성론',2),mk('ma3','범죄학개론',2)];
+const MA_COM=[mk('ma1','법학개론',2),mk('ma_ad','행정이론세미나',2),mk('ma4','경찰학개론',2)];
+const MA_CIV=[mk('ma9','경찰민법Ⅰ',3),mk('ma10','민법총칙',3)];
+mk('ma5','수사학개론',3);mk('ma8','헌법Ⅱ',3,['H']);mk('ma11','조직행정론',3);mk('ma12','인사행정론',3);mk('ma13','재무행정론',3);
+mk('rl1','일반행정법',3);mk('rl2','법과학개론',2);mk('rl3','기업법과 범죄',3);mk('rl4','경찰민법Ⅱ',3);mk('rl5','물권법',3);
+mk('ra1','사회과학방법론',3);mk('ra3','정책평가론',2);mk('ra4','범죄예방론',3);
+
+const TR={LAPL:{name:'경찰법학',dept:'law'},LAIN:{name:'범죄수사학',dept:'law'},ADPA:{name:'경찰행정학',dept:'admin'},ADSA:{name:'공공안전학',dept:'admin'}};
+const DEPT_NAME={law:'법학과',admin:'행정학과'};
+const SEM_NAME={LAPL:'경찰법세미나',LAIN:'수사·형사사법세미나',ADPA:'경찰정책세미나',ADSA:'범죄·공공안전세미나'};
+/* 전공과정별 전공선택 교과목 (편입생 안내서 표 5) */
+const LIST={
+ LAPL:[['법철학',2],['경찰과 인권',2,'H'],['헌법소송론',3],['행정구제법',2],['집회시위법',2],['채권총론',3],['채권각론',3],['친족상속법',2],['민사소송법',3],['지적재산권법',2],['국제거래법',2],['상법총론',3],['유가증권법',3],['보험해상법',2],['국제법',2],['노동법',2],['환경법',2],['공법종합연구',2],['민사법종합연구',2],['경제법',2],['전자상거래법',2],['기업법과 범죄사례실무',3]],
+ LAIN:[['특별형법',2],['프로파일링 기법',2],['비교수사제도연구',2],['법의학',2],['강력범죄수사론',2],['사이버수사법령과 판례',2],['사이버범죄수사론',3],['디지털포렌식개론',2],['수사면담·진술분석론',2],['반부패·공공·경제범죄수사론',2],['세무회계수사론',2],['교통사고수사론',2],['국제범죄수사론',2],['산업보안론',2],['형사법종합연구',2],['수사윤리연구',2],['자금세탁방지 및 범죄수익환수론',2],['법과학세미나',2],['IT법제와 수사정책',2],['법과학증거분석의 이해와 훈련 Ⅰ',3]],
+ ADPA:[['행정계량분석',2],['리더십론',2],['행정관리론',3],['경찰기획론',2],['집단역학론',2],['정부회계학',2],['행정개혁론',2],['자치행정론',2],['한국정부론',2],['정부규제론',2],['정책집행론',2],['정책분석론',2],['발전행정론',2],['국제행정론',2],['시민참여거버넌스',2],['자치경찰론',2],['형사정책',2],['공기업론',2],['데이터사이언스의 이해',2]],
+ ADSA:[['비교경찰연구',2],['범죄심리학',3],['범죄사회학',3],['피해자학',3],['청소년비행론',2],['범죄경제학',3],['형벌과 교정',2],['여성폭력과 안전',2,'G'],['지역사회와 경찰',2],['CPTED',2],['사회질서론',2],['테러리즘',2],['응용통계분석',2],['치안개발협력론',2],['범죄통계의이해',2],['부정방지론',2],['금융보안론',2]]
+};
+const LISTSET={};
+Object.keys(LIST).forEach(function(t){
+  LIST[t].forEach(function(x,i){mk(t+'_'+i,x[0],x[1],x[2]?[x[2]]:[]);LISTSET[t+'_'+i]=1;});
+  mk(t+'_s1',SEM_NAME[t]+' Ⅰ',2,['세미나']);LISTSET[t+'_s1']=1;
+  mk(t+'_s2',SEM_NAME[t]+' Ⅱ',2,['세미나']);LISTSET[t+'_s2']=1;
+});
+function idOf(t,n){return t+'_'+LIST[t].map(function(x){return x[0];}).indexOf(n);}
+const TH=[mk('th1','논문활동 Ⅰ',1,['필수']),mk('th2','논문활동 Ⅱ',1,['필수'])];
+/* 전공필수 (법학과·행정학과 각 19학점). 수사윤리연구·정책집행론은 전공선택 목록에도 있지만 해당 학과에서는 전공필수 */
+const ETHICS=idOf('LAIN','수사윤리연구'),POLIMPL=idOf('ADPA','정책집행론');
+const REQ={
+ law:{fixed:['rl1','rl3',ETHICS,'ma8','ma5','rl2'],pick:['rl4','rl5'],pickLabel:'경찰민법Ⅱ 또는 물권법'},
+ admin:{fixed:['ra1',POLIMPL,'ra3','ra4','ma11','ma12','ma13'],pick:[],pickLabel:''}
+};
+const EXCL={law:[ETHICS],admin:[POLIMPL]};
+const HG_SEL=[idOf('LAPL','경찰과 인권'),idOf('ADSA','여성폭력과 안전')];
+
+/* 경찰학전공 (36학점) */
+const PO_BASE=[mk('pb1','형법총론',3),mk('pb2','형법각론Ⅰ',3),mk('pb4','형사소송법Ⅰ',3)];
+const PO_CRIM=[mk('pb3','형법각론Ⅱ',2),mk('pb5','형사소송법Ⅱ',2)];
+const PO_REQ=[mk('pr1','생활안전론(아동·여성·청소년 안전)',2),mk('pr2','범죄피해자보호론',2),mk('pr3','경비경찰의 이해와 대테러 안전활동',2),mk('pr4','경찰교통론',2)];
+const PO_PICK=[mk('pp1','공공안녕정보론',2),mk('pp2','안보수사론',2),mk('pp3','국제경찰론',2),mk('pp4','경찰경무론',2)];
+const PO_ELEC=[['경찰관직무집행법',2],['경찰직무판례연구',2],['AI와 스마트치안',2],['풍속범죄',2],['경찰긴급대응론',2],['경찰교통공학론',2],['경찰위기관리',2],['공공안녕정보분석',2],['정보보호개론',2],['북한학',2],['국제치안협력론',2],['범죄수사기법',2],['수사사례연구',2],['수사정보분석론 Ⅰ',3],['현장수사기법',2],['분쟁협상',2],['위기협상',2],['치안드론 활용과 안티드론',3],['AI의 이해',3]]
+  .map(function(x,i){return mk('pe'+i,x[0],x[1]);});
+
+const XB={gy_x:'교양선택 (졸업 4학점 외 추가 이수)',ma_own:'전공선택 · 소속 전공과정',ma_same:'전공선택 · 같은 학과의 다른 전공과정',ma_other:'전공선택 · 상대 학과',po_elec:'경찰학선택'};
+
+const NC_EVAL=[
+ {k:'fl',t:'외국어 능력',s:'영어 TOEIC 790점 이상 등(제2외국어·베트남어 포함) 중 택1. 입학 이전에 취득한 외국어 성적은 인정되지 않습니다.'},
+ {k:'it',t:'정보화 능력',s:'컴퓨터활용능력 2급, 정보처리기사·산업기사 등 중 택1. 입학 이전 취득도 인정됩니다.'},
+ {k:'dr',t:'운전면허',s:'1종 보통 운전면허 취득. 입학 이전 취득도 인정됩니다.'},
+ {k:'sh',t:'사격',s:'완사·속사 합산 100점 환산 70점 이상.'},
+ {k:'po',t:'관서실습',s:'경찰관서 멘토 50% + 실습 담당교수 50% 평가 70점 이상(학점 없음).'},
+ {k:'ma',t:'무도 단증',s:'검도·유도·태권도·합기도·체포호신무도 중 공인 1단 이상. 입학 이전 단증은 인정되지 않습니다.'},
+ {k:'fi',t:'순환식 체력검사',s:'4분 40초 이내.'}
+];
+const NC_THESIS=[
+ {k:'t1',t:'졸업논문 지도교수 선정',s:'3학년 2학기 시작 후 2개월 이내(11월 말까지)'},
+ {k:'t2',t:'졸업논문 계획서 제출',s:'3학년 2학기 종강 전'},
+ {k:'t3',t:'중간보고서 제출',s:'4학년 1학기 시작 후 2개월 이내(4월 말까지)'},
+ {k:'t4',t:'최종 졸업논문 제출',s:'4학년 2학기 11월 말까지(융복합트랙은 논문대체활동 결과보고서)'}
+];
+
+/* ---------- 융복합트랙 (2026학년도 융복합트랙 학생선발 안내, 확정) ---------- */
+function nz(s){return String(s).replace(/[\s·ㆍ‧]/g,'');}
+const NAME2ID={};
+Object.keys(C).forEach(function(id){const k=nz(C[id].name);if(!(k in NAME2ID))NAME2ID[k]=id;});
+const TKREG={};let TKN=0;const TKNAME={};
+function tkid(key){const k=nz(key);if(!TKREG[k]){TKN++;TKREG[k]='tk'+TKN;TKNAME[TKREG[k]]=key;}return TKREG[k];}
+function S1(n,cr,y,o){return Object.assign({n:n,cr:cr,y:y||''},o||{});}
+function PK(label,pick,opts,o){return Object.assign({pick:pick,label:label,opts:opts},o||{});}
+const TRACKS=[
+ {id:'econ',name:'경제·지능범죄',prof:'정혜련',need:12,
+  desc:'기업범죄를 포함한 경제·지능범죄의 유형과 사례를 연구하고, 실무적인 수사방법을 함께 배워 이론과 현장을 접목하는 과정입니다.',
+  rows:[S1('상법총론',3,'3',{req:1,dept:'law',tag:'법학과 필수'}),S1('기업법과 범죄',3,'3‧4',{req:1,dept:'admin',tag:'행정학과 필수'}),
+        S1('기업법과 범죄사례실무',3,'3‧4'),S1('보험해상법',2,'3‧4'),S1('유가증권법',3,'3‧4'),
+        PK('경제법 또는 IT법제와 수사정책',1,[S1('경제법',2,'3‧4'),S1('IT법제와 수사정책',2,'3‧4')]),
+        S1('리걸테크법률실무',3,'4',{tk:1})],
+  notes:['법학과는 상법총론, 행정학과는 기업법과 범죄를 필수로 포함해 12학점 이상 이수합니다.'],
+  thesis:['경제·지능범죄 관련 주제로 등재 학술지 논문 발표','기업범죄 및 IT법과 정책 주제 관련 세미나 발표','정보보안기사, 정보보안산업기사, 공인회계사 1차, 재경관리사 합격','졸업논문으로 인정할 수 있는 논문 작성 등 지도교수가 인정하는 특별한 사정']},
+ {id:'fin',name:'금융범죄수사',prof:'서준배',need:13,
+  desc:'금융시스템을 악용한 금융사기·불법 사금융 등에 대응하기 위해 금융정보 활용 수사, 계좌추적, 범죄수익 몰수보전, 피해방지와 피해자 보호를 심화 학습하는 과정입니다.',
+  rows:[S1('금융보안론',2,'3‧4',{req:1}),S1('부정방지론',2,'3‧4',{req:1}),S1('산업보안론',2,'3‧4',{req:1}),S1('세무회계수사론',2,'3‧4',{req:1}),
+        S1('반부패·공공·경제범죄수사론',2,'3‧4',{req:1}),S1('수사정보분석론',3,'3‧4',{req:1,ref:'수사정보분석론Ⅰ'})],
+  notes:['표의 6과목을 모두 이수하는 구성입니다(학점 계 13).'],
+  thesis:['사기방지연구회, 자금세탁방지학회 등 금융보안 관련 발표','등재후보지 이상 관련 논문 게재','졸업논문으로 인정할 수 있는 논문 작성 등 지도교수가 인정하는 특별한 사정']},
+ {id:'cyber',name:'사이버안전',prof:'이상은',need:13,
+  desc:'해킹·아동성착취·온라인 사기 등 사이버범죄에 대응할 전문가를 기르기 위해 정보보호, 사이버범죄수사, 디지털포렌식의 기술·법제·실무를 배우는 과정입니다. 관련 대학원 진학과 연계됩니다.',
+  rows:[PK('아래 6과목 중 3과목',3,[S1('운영체제',2,'1·2·3'),S1('네트워크',2,'1·2·3'),S1('프로그래밍기초',2,'1·2·3'),S1('웹개발(JAVA)',2,'1·2·3'),S1('웹개발(JSP)',2,'1·2·3'),S1('정보보호개론',2,'1·2·3')],{req:1}),
+        PK('아래 2과목 중 1과목',1,[S1('IT법제와 수사정책',2,'2·3·4'),S1('사이버수사법령과 판례',2,'2·3·4')],{req:1}),
+        S1('사이버범죄수사론',3,'2·3·4',{req:1}),S1('디지털포렌식개론',2,'2·3·4',{req:1})],
+  notes:['트랙 표에는 웹개발(JAVA)·(JSP)가 2학점으로 적혀 있습니다(교육과정 안내서는 1학점). 트랙 계산에는 트랙 표의 학점을 사용합니다.','치안데이터과학연구센터(PSDS) 연구원 활동을 권고합니다.'],
+  thesis:['한국정보기술연구원 BoB 프로젝트 교육생 선정 및 교육수료 후 결과보고서 제출','정보보호학회·디지털포렌식학회 등 정보보안 관련 학술대회 투고·발표','정보보안기사, 정보보안산업기사 등 관련 자격증 획득','디지털포렌식, 해킹방어 등 정부·공공기관·학회·민간기업 주관 경진대회 입상','졸업논문으로 인정할 수 있는 논문 작성 등 지도교수가 인정하는 특별한 사정']},
+ {id:'inv',name:'수사정보분석',prof:'김경종',need:12,
+  desc:'SNS 등 온라인상의 수사정보를 사회연결망 분석(SNA) 등으로 분석하고, 수사에 필요한 디지털 데이터를 수집·전처리·분석하는 전문가를 기르는 과정입니다.',
+  rows:[S1('수사정보분석Ⅰ',3,'2,3,4',{req:1,ref:'수사정보분석론Ⅰ'}),S1('캡스톤디자인(수사)',3,'3,4',{req:1,tk:1}),S1('수사정보분석Ⅱ',3,'2,3,4',{req:1,tk:1,key:'수사정보분석론Ⅱ'}),S1('AI의 이해',3,'2,3,4',{req:1}),
+        PK('아래 4과목 중 1~2과목 (원문: 택1 또는 택2)',2,[S1('데이터시각화',2,'2,3,4',{tk:1}),S1('행정계량분석',2,'2,3,4'),S1('데이터사이언스의 수학적 이해',2,'2,3,4',{tk:1}),S1('응용통계분석',2,'2,3,4')])],
+  notes:['표의 학점 계(12)는 앞의 4과목 합계와 같아, 이 4과목을 필수로 계산했습니다. 데이터시각화 등 4과목은 원문에 택1 또는 택2로만 적혀 있어 필수로 넣지 않고 이수 학점에만 반영합니다. 정확한 기준은 트랙 담당교수에게 확인하세요.','프로그래밍기초와 기초통계학 이수를 권고합니다. 치안데이터과학연구센터(PSDS) 연구원 활동을 권고합니다.'],
+  thesis:['KCI 등재후보지 이상 논문 게재','수사정보분석 관련 세미나·학술대회 등 발표','데이터분석 준전문가, 빅데이터 분석기사 등 관련 자격증 취득 (원문 일부 글자 판독 불가)','졸업논문으로 인정할 수 있는 논문 작성, 치안R&D 연구과제 수행 등 지도교수가 인정하는 특별한 사정']},
+ {id:'fiscal',name:'재정·경제·회계',prof:'유승원',need:13,
+  desc:'치안과 관련된 재정·경제·회계 분야의 학문을 집중해서 학습하고 연구하는 과정입니다.',
+  rows:[S1('응용통계분석',2,'3',{req:1}),S1('정부회계학',2,'3',{req:1}),S1('행정계량분석',2,'3',{req:1}),S1('범죄경제학',3,'4',{req:1}),
+        PK('세무회계수사론 (미개설 시 정부규제론으로 대체)',1,[S1('세무회계수사론',2,'3‧4'),S1('정부규제론',2,'3‧4')],{req:1}),S1('공기업론',2,'3‧4',{req:1})],
+  notes:['세무회계수사론이 개설되지 않으면 정부규제론(2학점)으로 대체할 수 있습니다.'],
+  thesis:['재정회계 분야 주제로 등재후보지 이상 게재','공인회계사 시험 1차 합격(한국/미국)','공공기관 주관 경진대회 입상','졸업논문으로 인정할 수 있는 논문 작성 등 지도교수가 인정하는 특별한 사정']},
+ {id:'forensic',name:'포렌식사이언스',prof:'유승진',need:12,
+  desc:'범죄현장의 물적증거를 대상으로 첨단과학기술을 적용한 증거 채취·분석의 이론, 실습, 응용을 배우는 과정입니다.',
+  rows:[S1('법화학',2,'2,3'),S1('법생물학',2,'3'),S1('법과학 증거분석의 이해와 훈련 Ⅰ',3,'3',{ref:'법과학증거분석의 이해와 훈련 Ⅰ'}),S1('법과학 증거분석의 이해와 훈련 Ⅱ',3,'4',{tk:1}),
+        S1('포렌식사이언스 개론과 실습',3,'3',{tk:1}),S1('포렌식 바이오증거의 분석과 현장활용',3,'3,4',{tk:1}),S1('포렌식 물적 증거의 분석과 현장활용',3,'3,4',{tk:1})],
+  notes:['표에는 학점 계가 12학점 이상으로 적혀 있고 필수 과목 지정은 없습니다. 위 과목 중 12학점 이상을 이수합니다.'],
+  thesis:['포렌식사이언스 관련 학회·세미나 참석 및 실험실습, 관련 기관 실습견학 후 보고서 작성','포렌식사이언스 관련 국내학술지 논문 게재','졸업논문으로 인정할 수 있는 논문 작성 등 지도교수가 인정하는 특별한 사정']},
+ {id:'lia',name:'Law in Action',prof:'김면기',need:12,
+  desc:'이론 중심의 법학교육을 넘어, 실제 법집행에서 법이 어떻게 작동하는지 경찰 판례·사례와 학제 간 연구로 배우는 실용 법학 과정입니다.',
+  rows:[S1('수사사례연구',2,'3, 4',{req:1}),
+        S1('사회과학방법론',3,'3, 4',{req:1,dept:'law',tag:'법학과 필수'}),
+        PK('범죄심리학·범죄사회학·범죄경제학 중 1과목',1,[S1('범죄심리학',3,'3, 4'),S1('범죄사회학',3,'3, 4'),S1('범죄경제학',3,'3, 4')],{req:1,dept:'admin'}),
+        PK('아래 8과목 중 4과목 (편입생)',4,[S1('경찰직무판례연구',2,'3, 4'),S1('경찰활동과 캡스톤디자인(한시적 교과목)',3,'3, 4',{tk:1}),S1('형사법종합',2,'3, 4',{ref:'형사법종합연구'}),S1('형사정책',2,'3, 4'),S1('응용통계분석',2,'3, 4'),S1('사회신경과학',2,'3, 4'),S1('수사·형사법 세미나Ⅰ',2,'3, 4',{ref:'수사·형사사법세미나 Ⅰ'}),S1('수사·형사법 세미나Ⅱ',2,'3, 4',{ref:'수사·형사사법세미나 Ⅱ'})],{req:1})],
+  notes:['법학과는 사회과학방법론을 필수로, 행정학과는 범죄심리학·범죄사회학·범죄경제학 중 1과목을 선택합니다.','편입생은 수사윤리연구를 선택하지 않고, 아래 8과목 중 택3이 아니라 택4입니다(트랙 안내 원문 기준).','실증법학연구센터 연구원 활동을 권고합니다.'],
+  thesis:['KCI 등재후보지 이상 논문 게재','관련 세미나·학술대회 발표','졸업논문으로 인정할 수 있는 논문 작성 등 리서치 활동']},
+ {id:'psych',name:'범죄(법)심리학',prof:'최이문',need:12,
+  desc:'법과 범죄행동을 이해하는 데 필요한 심리학 연구를 배우고, 심리수사기법을 이론적·학문적으로 학습하는 과정입니다.',
+  rows:[S1('범죄심리학',3),S1('사회신경과학',2),S1('프로파일링 기법',2),S1('집단역학론',3),S1('피해자학',3),
+        PK('기초통계학 또는 응용통계분석',1,[S1('기초통계학',3),S1('응용통계분석',3)])],
+  notes:['표에는 학점 계가 12학점으로 적혀 있고 필수 과목 지정은 없습니다. 트랙 표의 학점(집단역학론 3, 통계 3)은 일반 교과목 학점과 다릅니다.'],
+  thesis:['심리학회 또는 범죄학회 학술논문(포스터) 투고 또는 발표']},
+ {id:'victim',name:'피해자보호',prof:'한민경',need:13,
+  desc:'스토킹·가정폭력·교제폭력·아동학대 등 관계성 범죄에 대응하기 위해 피해자 보호·지원의 이론, 정책, 현장을 배우는 과정입니다.',
+  rows:[S1('여성폭력과 안전',2,'3, 4',{req:1}),S1('성인지 관점의 이해',2,'전체',{req:1}),S1('피해자학',3,'3, 4',{req:1}),S1('형사정책',2,'3, 4',{req:1}),
+        S1('범죄·공공안전세미나Ⅰ',2,'4',{req:1,ref:'범죄·공공안전세미나 Ⅰ'}),S1('범죄·공공안전세미나Ⅱ',2,'4',{req:1,ref:'범죄·공공안전세미나 Ⅱ'})],
+  notes:['표의 6과목을 모두 이수하는 구성입니다(학점 계 13).'],
+  thesis:['KCI 등재후보지 이상 논문 게재','대한범죄학회 포스터 발표','피해자보호 관련 세미나·학술대회 참석','졸업논문으로 인정할 수 있는 논문 작성 등 지도교수가 인정하는 특별한 사정']},
+ {id:'ds',name:'데이터사이언스',prof:'노승국·김경종',need:14,
+  desc:'데이터 수집, 전처리, DB 입력, 분석·처리의 전 과정을 교육해 경찰청과 시·도청에서 필요한 인력을 기르는 과정입니다.',
+  rows:[S1('데이터사이언스의 수학적 이해',3,'전체',{tk:1}),S1('AI의 이해',3,'전체'),S1('수사정보분석론Ⅰ',3,'전체',{ref:'수사정보분석론Ⅰ'}),S1('캡스톤프로젝트',3,'전체',{tk:1}),
+        S1('데이터시각화',2,'전체',{tk:1}),S1('행정계량분석',2,'전체'),S1('응용통계분석',2,'전체'),S1('수사정보분석론Ⅱ',3,'전체',{tk:1})],
+  notes:['표에는 학점 계가 14학점 이상으로 적혀 있고 필수 과목 지정은 없습니다. 위 과목 중 14학점 이상을 이수합니다.'],
+  thesis:['KCI 등재후보지 이상 논문 게재','빅데이터 분석기사 등 관련 자격증 취득','졸업논문으로 인정할 수 있는 논문 작성 등 지도교수가 인정하는 특별한 사정']},
+ {id:'const',name:'헌법가치심화',prof:'장인호',need:12,isNew:true,
+  desc:'인권·평등·공정 등 헌법적 가치와, 헌법이 보장하는 기본권을 지키는 경찰의 역할과 임무를 집중해서 학습하고 연구하는 과정입니다.',
+  rows:[S1('헌법Ⅱ',3,'1',{req:1,ref:'헌법Ⅱ',tag:'필수'}),
+        PK('국가와 공동체 또는 민주주의와 공공철학 중 1과목',1,[S1('국가와 공동체',2,'1,2,3'),S1('민주주의와 공공철학',2,'1,2,3')],{req:1}),
+        S1('헌법소송론',3,'3,4'),S1('경찰과 인권',2,'3,4'),S1('시민참여와 거버넌스',2,'3,4',{ref:'시민참여거버넌스'}),S1('집회시위법',2,'3,4'),S1('경찰활동과 캡스톤디자인(헌법가치)',3,'3,4',{tk:1})],
+  notes:['헌법Ⅱ를 필수로 포함해 12학점 이상 이수합니다. 국가와 공동체·민주주의와 공공철학은 표에 선택1로 적혀 있어 1과목을 필수로 계산했습니다.'],
+  thesis:['KCI 등재후보지 이상 논문 게재','한국헌법학회, 헌법재판연구원 등 관련 세미나 발표','졸업논문으로 인정할 수 있는 논문 작성 등 지도교수가 인정하는 특별한 사정']},
+ {id:'ai',name:'AI 기반 정보분석',prof:'박승규',need:12,isNew:true,
+  desc:'직감과 주관을 벗어나 데이터와 과학적 원리에 기반한 정보분석으로, 인공지능과 데이터사이언스 역량을 갖추고 객관적인 정보를 생산하는 과정입니다.',
+  rows:[S1('데이터사이언스의 수학적 이해',3,'1,2,3',{req:1,tk:1}),S1('데이터시각화',3,'3,4',{req:1,tk:1}),S1('수사정보분석론2',2,'3,4',{req:1,tk:1,key:'수사정보분석론Ⅱ'}),S1('행정계량분석',2,'1,2,3',{req:1}),
+        PK('AI의 이해, 수사정보분석론1, 공공안녕 정보분석 중 1과목',1,[S1('AI의 이해',2,'3,4'),S1('수사정보분석론1',3,'3,4',{ref:'수사정보분석론Ⅰ'}),S1('공공안녕 정보분석',2,'4',{ref:'공공안녕정보분석'})],{req:1})],
+  notes:['치안데이터과학연구센터(PSDS) 연구원 활동을 권고합니다.'],
+  thesis:['KCI 등재후보지 이상 논문 게재','데이터분석 준전문가, 빅데이터 분석기사 등 관련 자격증 취득','전국 단위 이상, 정부부처 등 공공기관이 주관하는 데이터 분석 경연대회 입상','경찰청 등 치안현업과 직결되는 연구·개발과제 수행 등 지도교수가 인정하는 특별한 사정']}
+];
+const TRK={};
+function resolveRow(o){
+  if(o.tk){o.id=tkid(o.key||o.n);o.ref=null;o.isTk=true;return;}
+  const id=NAME2ID[nz(o.ref||o.n)];
+  if(id){o.id=id;o.ref=id;o.isTk=false;}
+  else{o.id=tkid(o.n);o.ref=null;o.isTk=true;}
+}
+TRACKS.forEach(function(t){
+  TRK[t.id]=t;
+  t.rows.forEach(function(rw){if(rw.pick){rw.opts.forEach(resolveRow);}else{resolveRow(rw);}});
+});
+
+
+
+/* ---------- 과목 검색 색인 ---------- */
+const CAT={};
+function setCat(ids,txt){ids.forEach(function(id){CAT[id]=txt;});}
+setCat(HUM_MUDO,'교양 · 인성교양 · 신체적 체험(무도)');
+setCat([GY_G],'교양 · 졸업 4학점 외 추가 이수 (G코드)');
+setCat(MA_BASE,'일반학전공 · 전공기초');
+setCat(MA_COM,'일반학전공 · 전공기초 · 공통 기초 택1');
+setCat(MA_CIV,'일반학전공 · 전공기초 · 택1');
+setCat(REQ.law.fixed.concat(REQ.law.pick),'일반학전공 · 전공필수 · 법학과');
+setCat(REQ.admin.fixed,'일반학전공 · 전공필수 · 행정학과');
+Object.keys(LIST).forEach(function(t){
+  const ids=LIST[t].map(function(_,i){return t+'_'+i;}).concat([t+'_s1',t+'_s2']);
+  setCat(ids,'일반학전공 · 전공선택 · '+TR[t].name+' ('+DEPT_NAME[TR[t].dept]+')');
+});
+setCat([ETHICS],'일반학전공 · 법학과 전공필수 / 범죄수사학 전공선택');
+setCat([POLIMPL],'일반학전공 · 행정학과 전공필수 / 경찰행정학 전공선택');
+setCat(TH,'일반학전공 · 전공선택 · 논문활동');
+setCat(PO_BASE,'경찰학전공 · 전공기초(경찰 관계 형사법)');
+setCat(PO_CRIM,'경찰학전공 · 전공기초 · 택1');
+setCat(PO_REQ,'경찰학전공 · 경찰학필수');
+setCat(PO_PICK,'경찰학전공 · 경찰학필수 · 4과목 중 택3');
+setCat(PO_ELEC,'경찰학전공 · 경찰학선택');
+const TKIN={};
+TRACKS.forEach(function(t){t.rows.forEach(function(rw){(rw.pick?rw.opts:[rw]).forEach(function(o){
+  const a=TKIN[o.id]=TKIN[o.id]||[];
+  if(!a.some(function(x){return x.t===t.name;}))a.push({t:t.name,cr:o.cr});
+});});});
+function sn(s){
+  return nz(s).replace(/[Ⅰⅰ]/g,'1').replace(/[Ⅱⅱ]/g,'2').replace(/[Ⅲⅲ]/g,'3').replace(/[Ⅳⅳ]/g,'4').replace(/[Ⅴⅴ]/g,'5').replace(/[Ⅵⅵ]/g,'6').replace(/[Ⅶⅶ]/g,'7').replace(/[Ⅷⅷ]/g,'8').toLowerCase();
+}
+const IDX=[];
+Object.keys(C).forEach(function(id){IDX.push({id:id,name:C[id].name,cr:C[id].cr,tags:C[id].tags,cat:CAT[id]||'',tk:false});});
+Object.keys(TKNAME).forEach(function(id){const m=TKIN[id]||[];IDX.push({id:id,name:TKNAME[id],cr:m.length?m[0].cr:0,tags:['트랙 전용'],cat:'융복합트랙 전용 과목',tk:true});});
+IDX.forEach(function(it){
+  const m=TKIN[it.id]||[];
+  it.mem=m.length?'융복합트랙 지정: '+m.map(function(x){return x.t+(it.tk?'('+x.cr+'학점)':'');}).join(', '):'';
+  it.key=sn(it.name);
+  it.ckey=sn(it.cat+' '+it.mem);
+});
+let Q='',QF='all';
+
+
+/* ============================================================
+   상태
+   ============================================================ */
+function defState(){
+  return {v:1,dept:'law',track:'LAPL',deptSet:false,adv:'none',advTrack:'LAPL',tkId:'',
+    st:{},extras:[],nc:{},vol:0,warn:0,inc:false,sem:2,nid:1,ui:{tab:'start',open:{}}};
+}
+let S=defState();
+function fixUi(){
+  if(S.ui.tab==='info')S.ui.tab='rem';
+  if(S.ui.tab==='tk'&&S.adv!=='track')S.ui.tab='start';
+}
+function loadState(){
+  try{
+    const raw=localStorage.getItem(KEY);
+    if(raw){const o=JSON.parse(raw);S=Object.assign(defState(),o);S.ui=Object.assign({tab:'start',open:{}},o.ui||{});}
+  }catch(e){}
+  fixUi();
+}
+function saveState(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+
+/* ============================================================
+   계산 (편입생: 교양 4 + 일반학전공 42 + 경찰학전공 36 + 부호지정 H/G 2 = 84학점)
+   ============================================================ */
+function compute(S,inc){
+  const cnt=function(id){const v=S.st[id]|0;return v===1||(inc&&v===2);};
+  const sumIds=function(ids){return ids.reduce(function(a,id){return a+(cnt(id)?C[id].cr:0);},0);};
+  const G={gy:[],ma:[],po:[],hg:[],adv:[],tk:[]};
+  const grp=function(area,title){const g={t:title,rem:0,rows:[]};G[area].push(g);return g;};
+  const row=function(g,n,cr,tag,extra){const o={n:n,cr:cr,tag:tag||''};if(extra)Object.assign(o,extra);g.rows.push(o);};
+  const missOpts=function(ids){return ids.filter(function(id){return !cnt(id);}).map(function(id){return {n:C[id].name,cr:C[id].cr};});};
+
+  /* 직접 입력한 인정학점 */
+  const xs={};let codeGy=0,codeSel=0;
+  S.extras.forEach(function(e){
+    const v=e.status|0;if(!(v===1||(inc&&v===2)))return;
+    const c=Math.max(0,+e.cr||0);
+    xs[e.bucket]=(xs[e.bucket]||0)+c;
+    if(e.code==='H'||e.code==='G'){if(e.bucket==='gy_x')codeGy+=c;else codeSel+=c;}
+  });
+
+  /* ---------- 교양 4학점 ---------- */
+  const gHum=grp('gy','인성교양 · 신체적 체험(무도)');
+  const gyRem=Math.max(0,4-sumIds(HUM_MUDO));
+  HUM_MUDO.forEach(function(id){if(!cnt(id))row(gHum,C[id].name,1,'필수');});
+  gHum.rem=gyRem;
+
+  /* ---------- 일반학전공 42학점 ---------- */
+  const dept=S.dept;
+  const own=(S.track&&TR[S.track]&&TR[S.track].dept===dept)?S.track:Object.keys(TR).filter(function(k){return TR[k].dept===dept;})[0];
+  const gB=grp('ma','전공기초 (17학점)'),gR=grp('ma','전공필수 (19학점)'),gS=grp('ma','전공선택 (6학점)');
+  const comOk=MA_COM.some(cnt),civOk=MA_CIV.some(cnt);
+  const maBaseMiss=MA_BASE.reduce(function(s,id){return s+(cnt(id)?0:C[id].cr);},0)+(comOk?0:2)+(civOk?0:3);
+  MA_BASE.forEach(function(id){if(!cnt(id))row(gB,C[id].name,C[id].cr,'필수');});
+  if(!comOk)row(gB,'법학개론·행정이론세미나·경찰학개론 중 1과목',2,'택1',{note:'공통 기초',opts:missOpts(MA_COM)});
+  if(!civOk)row(gB,'경찰민법Ⅰ 또는 민법총칙',3,'택1',{opts:missOpts(MA_CIV)});
+  const rq=REQ[dept];
+  const rqPickOk=!rq.pick.length||rq.pick.some(cnt);
+  const rqMiss=rq.fixed.reduce(function(s,id){return s+(cnt(id)?0:C[id].cr);},0)+(rqPickOk?0:3);
+  rq.fixed.forEach(function(id){if(!cnt(id))row(gR,C[id].name,C[id].cr,'필수');});
+  if(!rqPickOk)row(gR,rq.pickLabel,3,'택1',{opts:missOpts(rq.pick)});
+  gB.rem=maBaseMiss;gR.rem=rqMiss;
+
+  /* 전공선택 */
+  const excl=EXCL[dept];
+  const otherDept=dept==='law'?'admin':'law';
+  const sameOther=Object.keys(TR).filter(function(k){return k!==own&&TR[k].dept===dept;})[0];
+  const otherTracks=Object.keys(TR).filter(function(k){return TR[k].dept!==dept;});
+  const listIds=function(t){return LIST[t].map(function(_,i){return t+'_'+i;}).filter(function(id){return excl.indexOf(id)<0;});};
+  const trackC=function(t){return sumIds(listIds(t));};
+  const semC=function(t){return sumIds([t+'_s1',t+'_s2']);};
+  const minorExtra=REQ[otherDept].fixed.concat(REQ[otherDept].pick).filter(function(id){return !LISTSET[id];});
+  const thC=sumIds(TH);
+  const mTh=(cnt('th1')?0:1)+(cnt('th2')?0:1);
+  const tkrAdv=(S.adv==='track'&&S.tkId&&TRK[S.tkId])?trackCalc(cnt,dept,minorExtra):null;
+
+  const calcSel=function(adv){
+    const rows=[];
+    const ownC=trackC(own)+semC(own)+thC+(xs.ma_own||0);
+    const sameC=trackC(sameOther)+semC(sameOther)+(xs.ma_same||0);
+    const otherC=otherTracks.reduce(function(a,t){return a+trackC(t)+semC(t);},0)+(adv==='minor'?sumIds(minorExtra):0)+(xs.ma_other||0);
+    const tkExtra=(adv==='track'&&tkrAdv)?tkrAdv.extra:0;
+    const total=ownC+sameC+otherC+tkExtra;
+    const advDiff=adv==='major'&&S.advTrack!==own&&TR[S.advTrack]&&TR[S.advTrack].dept===dept;
+    const advT=advDiff?S.advTrack:null;
+    const advPoolC=advDiff?(S.advTrack===sameOther?sameC:0):0;
+    const needOwn=adv!=='none';
+    const mSemOwn=needOwn?((cnt(own+'_s1')?0:2)+(cnt(own+'_s2')?0:2)):0;
+    const mSemAdv=advDiff?((cnt(advT+'_s1')?0:2)+(cnt(advT+'_s2')?0:2)):0;
+    const ownReq=adv==='none'?0:((adv==='major'&&!advDiff)?20:8);
+    const T=adv==='none'?6:20;
+    const yOwn=needOwn?Math.max(0,ownReq-ownC-mSemOwn-mTh):0;
+    const yAdv=advDiff?Math.max(0,12-advPoolC-mSemAdv):0;
+    const yOther=adv==='minor'?Math.max(0,12-otherC):0;
+    const after=total+mSemOwn+mSemAdv+mTh+yOwn+yAdv+yOther;
+    const yAny=Math.max(0,T-after);
+    if(needOwn)[1,2].forEach(function(n){if(!cnt(own+'_s'+n))rows.push({n:SEM_NAME[own]+' '+(n===1?'Ⅰ':'Ⅱ'),cr:2,tag:'필수',note:'소속 전공과정 전공심화세미나'});});
+    if(advDiff)[1,2].forEach(function(n){if(!cnt(advT+'_s'+n))rows.push({n:SEM_NAME[advT]+' '+(n===1?'Ⅰ':'Ⅱ'),cr:2,tag:'필수',note:'심화전공 세미나'});});
+    [['th1','Ⅰ'],['th2','Ⅱ']].forEach(function(x){if(!cnt(x[0]))rows.push({n:'논문활동 '+x[1],cr:1,tag:'졸업요건',note:'4학년 · 전공선택 학점으로 인정'});});
+    if(yOwn>0)rows.push({n:'소속 전공과정('+TR[own].name+') 전공선택',cr:yOwn,tag:'선택',note:ownReq===20?'심화전공: 8학점 + 심화 12학점':'소속 전공과정에서 8학점 이상 필요',opts:listIds(own).filter(function(id){return !cnt(id);}).map(function(id){return {n:C[id].name,cr:C[id].cr};})});
+    if(yAdv>0)rows.push({n:'심화전공('+(advT?TR[advT].name:'')+') 전공선택',cr:yAdv,tag:'선택',note:'심화 12학점',opts:missOpts(listIds(advT))});
+    if(yOther>0)rows.push({n:'부전공: 상대 학과 전공필수·전공선택',cr:yOther,tag:'선택',note:'12학점 (전공기초 제외)',opts:missOpts(minorExtra.concat(otherTracks.reduce(function(a,t){return a.concat(listIds(t));},[])))});
+    if(yAny>0)rows.push({n:'전공선택 (어느 전공과정이든 가능)',cr:yAny,tag:'선택',note:'일반학전공 탭의 전공선택 목록에서 고르세요'});
+    return {sel:mSemOwn+mSemAdv+mTh+yOwn+yAdv+yOther+yAny,total:total,own:ownC,ownReq:ownReq,T:T,rows:rows};
+  };
+  const base=calcSel('none');
+  const advRes=S.adv!=='none'?calcSel(S.adv):null;
+  base.rows.forEach(function(r){gS.rows.push(r);});
+  gS.rem=base.sel;
+  const maRem=maBaseMiss+rqMiss+base.sel;
+
+  /* ---------- 경찰학전공 36학점 ---------- */
+  const gb=grp('po','전공기초 · 경찰 관계 형사법 (11학점)'),gr=grp('po','경찰학필수 (14학점)'),ge=grp('po','경찰학선택 (11학점)');
+  const crimOk=PO_CRIM.some(cnt);
+  const poBaseMiss=PO_BASE.reduce(function(s,id){return s+(cnt(id)?0:C[id].cr);},0)+(crimOk?0:2);
+  PO_BASE.forEach(function(id){if(!cnt(id))row(gb,C[id].name,C[id].cr,'필수');});
+  if(!crimOk)row(gb,'형법각론Ⅱ 또는 형사소송법Ⅱ',2,'택1',{opts:missOpts(PO_CRIM)});
+  const poReqMiss=PO_REQ.reduce(function(s,id){return s+(cnt(id)?0:C[id].cr);},0);
+  PO_REQ.forEach(function(id){if(!cnt(id))row(gr,C[id].name,C[id].cr,'필수');});
+  const pickN=PO_PICK.filter(cnt).length;
+  const pickMiss=Math.max(0,3-pickN)*2;
+  if(pickMiss>0)row(gr,'4과목 중 3과목 이수',pickMiss,'택3',{note:(3-pickN)+'과목 더 필요',opts:missOpts(PO_PICK)});
+  const poElecE=sumIds(PO_ELEC)+(xs.po_elec||0);
+  const poElecMiss=Math.max(0,11-poElecE);
+  if(poElecMiss>0)row(ge,'경찰학선택',poElecMiss,'선택',{note:'11학점 이상 필요',opts:missOpts(PO_ELEC)});
+  gb.rem=poBaseMiss;gr.rem=poReqMiss+pickMiss;ge.rem=poElecMiss;
+  const poRem=poBaseMiss+poReqMiss+pickMiss+poElecMiss;
+
+  /* ---------- 부호지정과목: H 또는 G코드 2학점 (82학점 외 추가 이수) ---------- */
+  const gH=grp('hg','부호지정과목 (H 또는 G코드)');
+  const surplus=Math.max(0,base.total-6);
+  const hgSel=Math.min(sumIds(HG_SEL)+codeSel,surplus);
+  const hgGy=(cnt(GY_G)?C[GY_G].cr:0)+codeGy;
+  const hgHave=hgGy+hgSel;
+  const hgRem=Math.max(0,2-hgHave);
+  if(hgRem>0)row(gH,'H 또는 G코드 과목',hgRem,'필수',{note:'82학점 외에 추가로 이수 (졸업요구학점 84학점)',opts:[GY_G].concat(HG_SEL).filter(function(id){return !cnt(id);}).map(function(id){return {n:C[id].name+(C[id].tags.indexOf('H')>=0?' (H코드)':' (G코드)'),cr:C[id].cr};})});
+  gH.rem=hgRem;
+
+  /* ---------- 선택심화과정 (추가 이수, 졸업 필수 아님) ---------- */
+  const MODE={major:'심화전공',minor:'부전공',track:'융복합트랙'};
+  let advOut=null;
+  if(advRes){
+    const gA=grp('adv',MODE[S.adv]+' 이수 조건');
+    advRes.rows.forEach(function(r){gA.rows.push(r);});
+    gA.rem=advRes.sel;
+    advOut={mode:S.adv,name:MODE[S.adv],t:advRes.T,rem:advRes.sel,own:advRes.own,ownReq:advRes.ownReq};
+  }
+  /* 융복합트랙 지정 과목 */
+  if(tkrAdv){
+    const gt=grp('tk',tkrAdv.t.name+' 트랙');
+    tkrAdv.reqRows.forEach(function(r){gt.rows.push(r);});
+    if(tkrAdv.extraGap>0)gt.rows.push({n:'지정 과목 중 추가 이수',cr:tkrAdv.extraGap,tag:'선택',note:'트랙 학점 계 '+tkrAdv.need+'학점 중 부족분',opts:tkrAdv.optLeft});
+    gt.rem=tkrAdv.rem;
+  }
+
+  const total=gyRem+maRem+poRem+hgRem;
+  return {inc:inc,
+    gy:{t:4,rem:gyRem},
+    ma:{t:42,rem:maRem,base:maBaseMiss,req:rqMiss,sel:base.sel,selT:6,own:base.own,total:base.total,dept:dept},
+    po:{t:36,rem:poRem},
+    hg:{t:2,rem:hgRem,have:hgHave},
+    adv:advOut,
+    tk:tkrAdv?{name:tkrAdv.t.name,need:tkrAdv.need,earned:tkrAdv.earned,rem:tkrAdv.rem}:null,
+    total:total,target:84,G:G};
+}
+
+
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+function renderBar(R){
+  const r=S.inc?R.i:R.d;
+  document.getElementById('bar').innerHTML=
+   '<div class="bar-in"><div><div class="t">졸업까지 남은 학점</div><div class="big num">'+r.total+'<small>학점 / '+r.target+'</small></div></div>'+
+   '<div class="mini num"><span>교양 <b>'+r.gy.rem+'</b></span><span>일반학 <b>'+r.ma.rem+'</b></span><span>경찰학 <b>'+r.po.rem+'</b></span><span>H·G <b>'+r.hg.rem+'</b></span></div>'+
+   '<div class="sp"></div><label class="chk"><input type="checkbox" data-act="inc"'+(S.inc?' checked':'')+'>수강 중 과목도 이수로 계산</label></div>';
+}
+
+function renderHero(R){
+  const d=R.d,i=R.i;
+  let h='<div class="ledger">';
+  if(!S.deptSet)h+='<div class="warn">소속 학과가 아직 선택되지 않았습니다. 지금은 법학과 기준 임시 계산입니다. 설정 탭에서 바꿔 주세요.</div>';
+  const main=S.inc?i:d;
+  h+='<div class="lg-top"><div class="n num">'+main.total+'<small>학점 남음</small></div><div class="d num">요구 <b>'+main.target+'학점</b> 중 <b>'+(main.target-main.total)+'학점</b> 충족 · 편입생 기준<br>이수 기준 <b>'+d.total+'</b> · 수강 중 포함 <b>'+i.total+'</b></div></div>';
+  h+=ledgerRow('교양','무도 Ⅴ~Ⅷ',d.gy,i.gy);
+  h+=ledgerRow('일반학전공',DEPT_NAME[d.ma.dept]+' · 기초 17 · 필수 19 · 선택 6',d.ma,i.ma);
+  h+=ledgerRow('경찰학전공','기초 11 · 필수 14 · 선택 11',d.po,i.po);
+  h+=ledgerRow('부호지정','H 또는 G코드 추가 2학점',d.hg,i.hg);
+  if(S.adv!=='none'&&d.adv&&i.adv)h+=ledgerRow('선택심화',esc(d.adv.name)+' · 선택 · 전공선택 '+d.adv.t+'학점 기준(위 학점과 겹침)',{t:d.adv.t,rem:d.adv.rem},{t:i.adv.t,rem:i.adv.rem});
+  if(S.adv==='track'){
+    if(d.tk&&i.tk)h+=ledgerRow('융복합트랙',esc(d.tk.name)+' (위 학점과 겹칠 수 있음)',{t:d.tk.need,rem:d.tk.rem},{t:i.tk.need,rem:i.tk.rem});
+    else h+='<div class="lrow"><div class="nm">융복합트랙<small>트랙 미선택</small></div><div class="note" style="margin:0;grid-column:2/4">융복합트랙 탭에서 신청한 트랙을 고르면 남은 과목이 계산됩니다.</div></div>';
+  }
+  h+='<div class="legend"><span class="ld">이수</span><span class="lp">수강 중</span><span>남음</span></div>';
+  const n=Math.max(1,S.sem|0);
+  const per=Math.ceil(main.total/n);
+  const bad=per>26;
+  h+='<div class="plan"><label>남은 정규학기 수 <input class="num" type="number" min="1" max="4" value="'+n+'" data-set="sem" aria-label="남은 정규학기 수"></label>'+
+     '<span class="res'+(bad?' bad':'')+' num">학기당 평균 <b>'+per+'학점</b> 필요'+(bad?' · 학기당 신청 상한 26학점을 넘습니다':' · 신청 기준 3학년·4학년 1학기 20~26학점, 4학년 2학기 10~26학점')+'</span></div>';
+  h+='</div>';
+  document.getElementById('hero').innerHTML=h;
+}
+
+function ncLeft(){
+  let n=0;
+  NC_EVAL.forEach(function(x){if(!S.nc[x.k])n++;});
+  NC_THESIS.forEach(function(x){if(!S.nc[x.k])n++;});
+  if(S.adv==='track'&&!S.nc.tkth)n++;
+  if((+S.vol||0)<48)n++;
+  if((+S.warn||0)>2)n++;
+  return n;
+}
+
+function panelStart(R){
+  const dept=S.dept;
+  let h='<div class="card"><h2>소속</h2><p class="note">편입할 때 선택한 학과를 고르세요. 전공필수 과목이 학과마다 다릅니다.</p>';
+  h+='<h3>학과</h3><div class="opts">'+['law','admin'].map(function(d){return '<label class="opt'+(dept===d&&S.deptSet?' on':'')+'"><input type="radio" name="dept" data-set="dept" value="'+d+'"'+(dept===d&&S.deptSet?' checked':'')+'>'+DEPT_NAME[d]+'</label>';}).join('')+'</div>';
+  h+='<h3>전공과정 <span class="need">선택심화과정을 할 때만 필요</span></h3><p class="note">편입생은 4학년 진학 시 소속 학과의 전공과정(세부전공)을 선택할 수 있습니다. 전공선택 6학점은 전공과정 제한 없이 채울 수 있어서, 이 선택은 선택심화과정 계산에만 쓰입니다.</p><div class="opts">'+Object.keys(TR).filter(function(k){return TR[k].dept===dept;}).map(function(k){return '<label class="opt'+(S.track===k?' on':'')+'"><input type="radio" name="track" data-set="track" value="'+k+'"'+(S.track===k?' checked':'')+'>'+TR[k].name+'</label>';}).join('')+'</div>';
+  h+='<h3>선택심화과정 <span class="need">선택 · 졸업요건은 아닙니다</span></h3><p class="note">편입생은 일반학전공·경찰학전공 외에 선택심화과정을 추가로 이수할 수 있습니다. 3학년 2학기 말쯤 신청하며, 소속 전공과정 8학점(전공심화세미나 Ⅰ·Ⅱ 포함)과 심화 12학점이 필요합니다.</p><div class="opts">'+[['none','선택 안 함'],['major','심화전공'],['minor','부전공'],['track','융복합트랙']].map(function(o){return '<label class="opt'+(S.adv===o[0]?' on':'')+'"><input type="radio" name="adv" data-set="adv" value="'+o[0]+'"'+(S.adv===o[0]?' checked':'')+'>'+o[1]+'</label>';}).join('')+'</div>';
+  if(S.adv==='major'){
+    h+='<p class="note">심화전공을 소속 과정과 다른 과정(같은 학과)으로 택하려면 아래에서 고르세요.</p><div class="opts">'+Object.keys(TR).filter(function(k){return TR[k].dept===dept;}).map(function(k){return '<label class="opt'+(S.advTrack===k?' on':'')+'"><input type="radio" name="advTrack" data-set="advTrack" value="'+k+'"'+(S.advTrack===k?' checked':'')+'>'+TR[k].name+' 심화전공</label>';}).join('')+'</div>';
+  }
+  if(S.adv==='minor')h+='<p class="note">부전공: 상대 학과('+DEPT_NAME[dept==='law'?'admin':'law']+')의 전공필수·전공선택 12학점을 이수합니다. 전공기초 과목은 포함되지 않습니다. 일반학전공 탭에 상대 학과 전공필수 과목이 추가로 표시됩니다.</p>';
+  if(S.adv==='track')h+='<p class="note">융복합트랙: 위쪽 탭의 <b>융복합트랙</b>에서 신청한 트랙(12개 중)을 고르면 지정 과목과 남은 학점이 계산됩니다. 현재 선택: <b>'+(S.tkId&&TRK[S.tkId]?esc(TRK[S.tkId].name)+' 트랙':'아직 선택 안 함')+'</b></p>';
+  h+='</div>';
+  h+='<div class="card"><h2>편입생 졸업요건 요약</h2><ul class="bul">'+
+    '<li>졸업요구학점 <b>84학점</b> = 교양 4 + 일반학전공 42 + 경찰학전공 36 + 부호지정(H 또는 G코드) 2</li>'+
+    '<li>교양 4학점: 무도 Ⅴ~Ⅷ(각 1학점). 리더십아카데미는 학점이 없고 편입생은 평가에서 제외됩니다.</li>'+
+    '<li>일반학전공 42학점: 전공기초 17 + 전공필수 19 + 전공선택 6(전공과정 제한 없음, 논문활동 2학점 포함)</li>'+
+    '<li>경찰학전공 36학점: 전공기초(형사법) 11 + 경찰학필수 14 + 경찰학선택 11</li>'+
+    '<li>봉사활동 48시간 이상, 평가지정과목 7종 통과, 졸업논문(또는 융복합트랙 논문대체활동)</li></ul></div>';
+  h+='<div class="card"><h2>백업</h2><p class="note">입력값은 이 브라우저에 자동 저장됩니다. 다른 기기에서 쓰려면 아래 내용을 복사해 두었다가 붙여넣으세요.</p>'+
+    '<textarea class="inp" id="bk" aria-label="백업 데이터"></textarea><div class="opts"><button class="btn ghost" type="button" data-act="export">현재 내용 내보내기</button><button class="btn ghost" type="button" data-act="import">붙여넣은 내용 불러오기</button><button class="btn danger" type="button" data-act="reset">모두 초기화</button></div></div>';
+  return h;
+}
+
+function panelGy(R){
+  const r=S.inc?R.i:R.d;
+  let h='<div class="card"><h2>교양 '+okNo(r.gy.rem)+'<span class="tg">4학점 · 남음 '+r.gy.rem+'</span></h2>'+
+    '<p class="note">편입생의 교양은 인성교양 4학점, 곧 무도 Ⅴ~Ⅷ(각 1학점)입니다. 리더십아카데미는 학점이 없고 편입생은 평가에서 제외되며, 사회체육은 학점이 없는 선택 과목입니다. 학생지도평가는 학점이 없는 상당학점이라 졸업요건 탭에 따로 있습니다.</p>';
+  h+=rowsHtml(HUM_MUDO);
+  h+='<h3>졸업 4학점 외 추가 이수 <span class="need">G코드용</span></h3><p class="note">편입생 교양표에는 심화교양 사회/자연 영역의 성인지 관점의 이해(G코드)가 선택으로 올라 있습니다. 졸업 4학점에는 들어가지 않고, 졸업 전 H 또는 G코드 2학점 추가 이수에 쓰입니다.</p>';
+  h+=rowsHtml([GY_G]);
+  h+='</div>';
+  return h;
+}
+
+function panelMa(R){
+  const r=S.inc?R.i:R.d;
+  const dept=r.ma.dept;
+  const own=(S.track&&TR[S.track]&&TR[S.track].dept===dept)?S.track:Object.keys(TR).filter(function(k){return TR[k].dept===dept;})[0];
+  const rq=REQ[dept];
+  const excl=EXCL[dept];
+  let h='<div class="card"><h2>일반학전공 '+okNo(r.ma.rem)+'<span class="tg">'+DEPT_NAME[dept]+' · 42학점</span></h2>';
+  h+='<h3>전공기초 <span class="need">17학점</span> '+okNo(r.ma.base)+'</h3>'+rowsHtml(MA_BASE)+pickBox('공통 기초: 법학개론·행정이론세미나·경찰학개론 중 1과목 (택1)',MA_COM)+pickBox('경찰민법Ⅰ 또는 민법총칙 중 1과목 (택1)',MA_CIV);
+  h+='<h3>전공필수 <span class="need">19학점 · '+DEPT_NAME[dept]+'</span> '+okNo(r.ma.req)+'</h3>'+rowsHtml(rq.fixed)+(rq.pick.length?pickBox(rq.pickLabel+' (택1)',rq.pick):'');
+  h+='<h3>전공선택 <span class="need">6학점</span> '+okNo(r.ma.sel)+'</h3>';
+  h+='<p class="note">전체 전공선택 교과목 중 전공과정 제한 없이 6학점 이상을 이수합니다. 논문활동 Ⅰ·Ⅱ(2학점)는 졸업요건이며 전공선택으로 인정되므로 나머지 4학점을 채우면 됩니다. 현재 전공선택 전체 '+r.ma.total+'학점이 반영되어 있습니다.'+(S.adv!=='none'?' 선택심화과정을 하려면 전공선택을 더 이수해야 합니다(남은 과목 탭 참고).':'')+'</p>';
+  h+='<p class="note">'+(dept==='law'?'수사윤리연구는 법학과 전공필수라 위 전공필수에서만 셉니다.':'정책집행론은 행정학과 전공필수라 위 전공필수에서만 셉니다.')+'</p>';
+  const order=[own].concat(Object.keys(TR).filter(function(k){return k!==own;}));
+  order.forEach(function(t){
+    const ids=LIST[t].map(function(_,i){return t+'_'+i;}).filter(function(id){return excl.indexOf(id)<0;}).concat([t+'_s1',t+'_s2']);
+    const have=ids.filter(function(id){const v=S.st[id]|0;return v===1||(S.inc&&v===2);}).reduce(function(a,id){return a+C[id].cr;},0);
+    const mark=t===own?'소속':(TR[t].dept===dept?'같은 학과':'상대 학과');
+    h+=detailsHtml('ma_'+t,TR[t].name+' 전공선택','<span>'+mark+' · '+have+'학점 이수</span>',rowsHtml(ids),t===own&&S.adv!=='none');
+  });
+  if(S.adv==='minor'){
+    const od=dept==='law'?'admin':'law';
+    const ids=REQ[od].fixed.concat(REQ[od].pick).filter(function(id){return !LISTSET[id];});
+    h+=detailsHtml('ma_minor','상대 학과('+DEPT_NAME[od]+') 전공필수 — 부전공용','부전공 12학점에 산입',rowsHtml(ids),true);
+  }
+  h+=detailsHtml('ma_th','논문활동 (전공선택·졸업요건)','각 1학점 · 4학년',rowsHtml(TH),true);
+  h+='</div>';
+  return h;
+}
+
+function panelPo(R){
+  const r=S.inc?R.i:R.d;
+  let h='<div class="card"><h2>경찰학전공 '+okNo(r.po.rem)+'<span class="tg">36학점 · 남음 '+r.po.rem+'</span></h2>';
+  h+='<h3>전공기초(경찰 관계 형사법) <span class="need">11학점</span></h3>'+rowsHtml(PO_BASE)+pickBox('형법각론Ⅱ 또는 형사소송법Ⅱ 중 1과목 (택1)',PO_CRIM);
+  h+='<h3>경찰학필수 <span class="need">14학점</span></h3>'+rowsHtml(PO_REQ)+pickBox('아래 4과목 중 3과목 이수 (택3)',PO_PICK);
+  h+='<h3>경찰학선택 <span class="need">11학점 이상</span></h3>'+rowsHtml(PO_ELEC);
+  h+='<p class="note">관서실습은 학점이 없는 평가지정과목입니다(졸업요건 탭). 택3의 네 번째 과목은 경찰학선택으로 산입되는지 규정에 명시가 없어 계산에 넣지 않았습니다.</p></div>';
+  return h;
+}
+
+function panelXt(R){
+  const r=S.inc?R.i:R.d;
+  let h='<div class="card"><h2>인정학점 직접 입력</h2><p class="note">국내 교류 대학 등에서 인정받았거나 인정받을 과목을 구분별로 넣으면 해당 영역에 반영됩니다. 학점 인정은 심의를 거쳐 정해지므로, 확정된 구분과 학점을 입력하세요. 편입 때 인정된 전적 대학 학점은 이미 반영된 것으로 보고 입력하지 않아도 됩니다.</p>';
+  h+='<div class="fm">'+
+    '<label>과목명<input id="x_name" type="text" placeholder="예: 성인지 관점의 이해"></label>'+
+    '<label>학점<input id="x_cr" type="number" min="0" max="20" value="2"></label>'+
+    '<label>인정 구분<select id="x_bucket">'+Object.keys(XB).map(function(k){return '<option value="'+k+'">'+XB[k]+'</option>';}).join('')+'</select></label>'+
+    '<label>부호지정<select id="x_code"><option value="">해당 없음</option><option value="H">H코드</option><option value="G">G코드</option></select></label>'+
+    '<label>상태<select id="x_status"><option value="2">수강 중</option><option value="1">이수</option></select></label>'+
+    '</div><div class="opts" style="margin-top:10px"><button class="btn" type="button" data-act="addx">추가</button></div>';
+  h+='<h3>입력한 인정학점</h3>';
+  if(!S.extras.length)h+='<p class="note">아직 없습니다. 위에서 과목을 추가하세요.</p>';
+  S.extras.forEach(function(e){
+    h+='<div class="xl"><div><b>'+esc(e.name||'(이름 없음)')+'</b> <span class="num">'+e.cr+'학점</span>'+(e.code?'<span class="tag '+e.code+'">'+e.code+'코드</span>':'')+'<div class="sub">'+esc(XB[e.bucket])+'</div></div>'+
+      '<div class="seg" role="group" aria-label="상태"><button type="button" data-act="xst" data-id="'+e.id+'" data-v="1" aria-pressed="'+(e.status==1)+'">이수</button><button type="button" data-act="xst" data-id="'+e.id+'" data-v="2" aria-pressed="'+(e.status==2)+'">수강 중</button></div>'+
+      '<button class="btn danger" type="button" data-act="delx" data-id="'+e.id+'" aria-label="삭제">삭제</button></div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+function ncRow(k,t,s){
+  return '<label class="ncl"><input type="checkbox" data-act="nc" data-k="'+k+'"'+(S.nc[k]?' checked':'')+'><div><div class="tt">'+esc(t)+'</div><div class="ss">'+esc(s)+'</div></div></label>';
+}
+function panelNc(R){
+  const r=S.inc?R.i:R.d;
+  let h='<div class="card"><h2>부호지정과목 <span class="tg">졸업요구학점 84학점에 포함</span></h2>';
+  h+='<div class="ncl"><span class="tag G" style="margin:2px 0 0">H·G</span><div><div class="tt">H 또는 G코드 과목 2학점 추가 이수 '+(r.hg.rem<=0?'<span class="pill ok">충족</span>':'<span class="pill no">'+r.hg.rem+'학점 부족</span>')+'</div><div class="ss num">현재 '+r.hg.have+'/2학점 · H코드: 경찰과 인권 · G코드: 성인지 관점의 이해, 여성폭력과 안전. 헌법Ⅱ는 전공필수 학점이라 추가 2학점에 넣지 않았습니다.</div></div></div></div>';
+  h+='<div class="card"><h2>평가지정과목 <span class="tg">4학년 2학기 기말시험 종료일까지 모두 통과해야 합니다</span></h2>';
+  NC_EVAL.forEach(function(x){h+=ncRow(x.k,x.t,x.s);});
+  h+='</div>';
+  h+='<div class="card"><h2>봉사활동·학업성적</h2>'+
+    '<div class="ncl"><div style="flex:1"><div class="tt">봉사활동 48시간 이상 (편입생)</div><div class="ss">현재 <input class="inp num" style="width:90px;padding:4px 8px" type="number" min="0" max="999" value="'+(+S.vol||0)+'" data-set="vol"> 시간 '+((+S.vol||0)>=48?'<span class="pill ok">충족</span>':'<span class="pill no">'+(48-(+S.vol||0))+'시간 남음</span>')+'</div></div></div>'+
+    '<div class="ncl"><div style="flex:1"><div class="tt">학사경고는 재학 중 2회 이하</div><div class="ss">지금까지 받은 학사경고 <input class="inp num" style="width:70px;padding:4px 8px" type="number" min="0" max="9" value="'+(+S.warn||0)+'" data-set="warn"> 회 '+((+S.warn||0)>2?'<span class="pill no">3회 이상은 퇴학 사유</span>':'<span class="pill ok">기준 이내</span>')+'</div></div></div>'+
+    ncRow('nf','F등급이 없어야 함','F등급을 받으면 졸업요건을 충족할 수 없습니다. 해당 사항이 없으면 체크하세요.')+
+    ncRow('ng','한 학기 평균평점 1.5 이상','어느 학기든 1.5 미만이면 퇴학 사유입니다. 해당 사항이 없으면 체크하세요.')+
+    '</div>';
+  h+='<div class="card"><h2>졸업논문 <span class="tg">논문활동 Ⅰ·Ⅱ 2학점은 일반학전공 탭에서 계산</span></h2>';
+  NC_THESIS.forEach(function(x){h+=ncRow(x.k,x.t,x.s);});
+  if(S.adv==='track')h+=ncRow('tkth','융복합트랙 논문 대체 활동 완료','트랙별 논문 대체 활동 목록은 융복합트랙 탭에 있습니다.');
+  h+='</div>';
+  return h;
+}
+
+function panelSearch(R){
+  const q=Q,k=sn(q);
+  const keep=function(it){return QF==='all'||String(S.st[it.id]|0)===QF;};
+  const A=[],B=[];
+  IDX.forEach(function(it){if(it.key.indexOf(k)>=0)A.push(it);else if(it.ckey.indexOf(k)>=0)B.push(it);});
+  const A2=A.filter(keep),B2=B.filter(keep);
+  const LIMIT=100;
+  const total=A2.length+B2.length;
+  let h='<div class="card"><div class="rc-h"><h2>검색 결과 <span class="tg">“'+esc(q)+'”</span></h2><button class="btn ghost" type="button" data-act="qclear">검색 닫기</button></div>';
+  h+='<div class="qf" role="group" aria-label="이수 상태로 거르기">'+[['all','전체'],['0','미이수'],['1','이수'],['2','수강 중']].map(function(o){return '<button type="button" data-act="qf" data-v="'+o[0]+'" aria-pressed="'+(QF===o[0])+'">'+o[1]+'</button>';}).join('')+'</div>';
+  h+='<p class="note">과목명에서 '+A2.length+'개, 분류·융복합트랙 이름에서 '+B2.length+'개를 찾았습니다. 이수 상태 버튼을 누르면 바로 반영됩니다.'+(total>LIMIT?' 앞의 '+LIMIT+'개만 표시하니 더 구체적으로 입력해 보세요.':'')+'</p>';
+  let shown=0;
+  const part=function(list,title){
+    if(!list.length||shown>=LIMIT)return;
+    h+='<div class="sh">'+title+'</div>';
+    list.forEach(function(it){if(shown>=LIMIT)return;shown++;h+=resRow(it,q);});
+  };
+  part(A2,'과목명 일치');
+  part(B2,'분류·융복합트랙 일치');
+  if(!total)h+='<p class="note">'+(QF==='all'?'찾는 과목이 없습니다. 과목명 일부(예: 형법), 분류(예: 경찰학선택), 융복합트랙 이름(예: 사이버안전)으로 검색해 보세요.':'이 이수 상태에 해당하는 과목이 없습니다. 위에서 전체를 선택해 보세요.')+'</p>';
+  return h+'</div>';
+}
+
+/* ---------- 남은 과목 화면 ---------- */
+function panelRem(R){
+  const r=S.inc?R.i:R.d;
+  const basis=S.inc?'수강 중인 과목도 이수한 것으로 계산한 결과입니다.':'이수 완료로 표시한 과목만 반영한 결과입니다. 위쪽 스위치로 수강 중 과목을 포함할 수 있습니다.';
+  let h='<div class="note" style="margin-top:0">'+basis+'</div>';
+  const box=function(k,v,u,z){return '<div class="box'+(k==='총 남은 학점'?' tot':'')+'"><div class="k">'+k+'</div><div class="v num'+(z?' z':'')+'">'+v+'<small>'+u+'</small></div></div>';};
+  h+='<div class="rem-sum">'+box('총 남은 학점',r.total,'/ '+r.target,r.total<=0)+box('교양',r.gy.rem,'학점',r.gy.rem<=0)+box('일반학전공',r.ma.rem,'학점',r.ma.rem<=0)+box('경찰학전공',r.po.rem,'학점',r.po.rem<=0)+box('H·G코드',r.hg.rem,'학점',r.hg.rem<=0)+'</div>';
+  h+=remCard('교양','요구 4학점',r.gy.rem,r.G.gy);
+  h+=remCard('일반학전공',DEPT_NAME[r.ma.dept]+' · 요구 42학점',r.ma.rem,r.G.ma);
+  h+=remCard('경찰학전공','요구 36학점',r.po.rem,r.G.po);
+  h+=remCard('부호지정과목','졸업 전 H 또는 G코드 2학점',r.hg.rem,r.G.hg);
+  if(S.adv!=='none'&&r.adv)h+=remCard('선택심화과정',r.adv.name+' · 전공선택 '+r.adv.t+'학점 기준',r.adv.rem,r.G.adv,'졸업 필수가 아닌 추가 이수 과정입니다. 위 일반학전공 전공선택과 겹치는 학점이라 총 남은 학점에는 따로 더하지 않았습니다.');
+  if(S.adv==='track'){
+    if(r.tk)h+=remCard('융복합트랙',r.tk.name+' · 이수 '+r.tk.earned+'/'+r.tk.need+'학점',r.tk.rem,r.G.tk,'위 영역과 겹치는 과목은 한 번만 이수하면 되고, 위 남은 학점 합계에는 따로 더하지 않았습니다.');
+    else h+='<div class="card"><h2>융복합트랙</h2><p class="note">융복합트랙 탭에서 트랙을 선택하면 남은 과목이 여기에 표시됩니다.</p></div>';
+  }
+  const nc=ncLeft();
+  h+='<div class="card"><div class="rc-h"><h2>학점 외 졸업요건 <span class="tg">졸업요건 탭에서 체크</span></h2><div class="rc-n num'+(nc===0?' z':'')+'">'+(nc===0?'<b>충족</b>':'남은 항목 <b>'+nc+'</b>건')+'</div></div></div>';
+  h+='<details class="grp" data-k="basis"'+(S.ui.open.basis?' open':'')+'><summary>계산 기준과 가정 보기</summary>'+basisHtml()+'</details>';
+  return h;
+}
+function basisHtml(){
+  return '<ul class="plain">'+
+   '<li><b>기준 문서</b>: 「2026학년도 경찰대학 편입생 교육과정 안내서」(교육과정규칙·학칙 포함)와 「2026학년도 융복합트랙 학생선발 안내(확정)」.</li>'+
+   '<li><b>졸업요구학점 84학점</b>: 교양 4 + 일반학전공 42 + 경찰학전공 36 + 부호지정 2. 안내서 표 1의 82학점에 총괄표의 “졸업 전 H 또는 G코드 중 2학점 추가 이수”가 더해진 값이며, 학칙 제43조와 교육과정규칙 제25조도 84학점입니다.</li>'+
+   '<li><b>H·G코드 2학점</b>: “추가 이수”라는 표현에 따라 82학점 밖의 학점으로 계산했습니다. 성인지 관점의 이해(교양)는 전부 추가분으로, 경찰과 인권·여성폭력과 안전(전공선택)은 전공선택 6학점을 넘긴 초과분만 추가분으로 셉니다. 헌법Ⅱ는 전공필수 학점이라 넣지 않았습니다. 이중 인정이 되는지는 학사운영계에 확인하세요. 이중 인정이 된다면 실제로는 2학점이 덜 필요합니다.</li>'+
+   '<li><b>전공선택 6학점</b>: 전공과정 제한 없이 채울 수 있고, 논문활동 Ⅰ·Ⅱ 2학점을 포함합니다.</li>'+
+   '<li><b>수사윤리연구·정책집행론</b>: 전공선택 목록(표 5)에도 있지만 각각 법학과·행정학과의 전공필수라서 해당 학과 학생은 전공필수에서만 계산합니다.</li>'+
+   '<li><b>선택심화과정</b>: 편입생은 추가로 이수하는 과정이라 졸업 필수가 아니며, 소속 전공과정 8학점(세미나 Ⅰ·Ⅱ와 논문활동 포함)과 심화 12학점으로 보아 전공선택 총 20학점 기준으로 계산합니다. 이 학점은 일반학전공 전공선택과 겹치므로 총 남은 학점에 더하지 않았습니다.</li>'+
+   '<li><b>경찰학필수 택3</b>: 4과목 중 3과목만 인정하고 나머지 1과목은 계산에서 뺍니다.</li>'+
+   '<li><b>경찰학선택 목록</b>: 안내서 표 7에 편성표의 AI와 스마트치안(2), 경찰긴급대응론(2)을 합쳐 넣었습니다. 총괄표에는 “치안드론과 안티드론”, 표 7에는 “치안드론 활용과 안티드론”으로 적혀 있는데 같은 과목으로 보았습니다.</li>'+
+   '<li><b>융복합트랙</b>: 트랙 표의 학점을 그대로 쓰며 일반 교과목 학점과 다른 과목이 있습니다. 편입 교양에는 없는 과목(운영체제, 법화학 등)은 트랙 전용 과목으로 보고 전공선택 학점으로 계산했습니다(문서에 명시 없음). Law in Action은 편입생 기준(수사윤리연구 미선택, 택4)으로 반영했습니다. 트랙 남은 학점은 위 영역과 겹칠 수 있어 총 남은 학점에 따로 더하지 않았습니다.</li>'+
+   '<li>국외 위탁생(교환학생) 특례와 신입생·2020학년도 이전 기준은 다루지 않습니다.</li></ul>';
+}
+
+/* ============================================================
+   이벤트
+   ============================================================ */
+function onClick(ev){
+  const t=ev.target.closest('[data-act]');if(!t)return;
+  const act=t.getAttribute('data-act');
+  if(act==='st'){S.st[t.getAttribute('data-id')]=+t.getAttribute('data-v');}
+  else if(act==='tab'){clearQ();S.ui.tab=t.getAttribute('data-tab');saveState();renderAll();window.scrollTo({top:0});return;}
+  else if(act==='qclear'){clearQ();}
+  else if(act==='qf'){QF=t.getAttribute('data-v');}
+  else if(act==='addx'){
+    const name=document.getElementById('x_name').value.trim();
+    const cr=Math.max(0,Math.min(20,+document.getElementById('x_cr').value||0));
+    if(!cr){document.getElementById('x_cr').focus();return;}
+    S.extras.push({id:S.nid++,name:name,cr:cr,bucket:document.getElementById('x_bucket').value,code:document.getElementById('x_code').value,status:+document.getElementById('x_status').value});
+  }
+  else if(act==='xst'){const e=S.extras.filter(function(x){return x.id==t.getAttribute('data-id');})[0];if(e)e.status=+t.getAttribute('data-v');}
+  else if(act==='delx'){S.extras=S.extras.filter(function(x){return x.id!=t.getAttribute('data-id');});}
+  else if(act==='nc'){S.nc[t.getAttribute('data-k')]=t.checked;}
+  else if(act==='inc'){S.inc=t.checked;}
+  else if(act==='export'){document.getElementById('bk').value=JSON.stringify(S);return;}
+  else if(act==='import'){
+    try{const o=JSON.parse(document.getElementById('bk').value);S=Object.assign(defState(),o);S.ui=Object.assign({tab:'start',open:{}},o.ui||{});}
+    catch(e){alert('불러오지 못했습니다. 내보내기로 만든 내용을 그대로 붙여넣어 주세요.');return;}
+  }
+  else if(act==='reset'){if(!confirm('입력한 내용을 모두 지울까요?'))return;S=defState();}
+  saveState();renderAll();
+}
+function onChange(ev){
+  const t=ev.target;const k=t.getAttribute&&t.getAttribute('data-set');
+  if(!k)return;
+  if(k==='dept'){S.deptSet=true;S.dept=t.value;S.track=Object.keys(TR).filter(function(x){return TR[x].dept===S.dept;})[0];S.advTrack=S.track;}
+  else if(k==='track'){S.track=t.value;S.advTrack=t.value;}
+  else if(k==='adv'){S.adv=t.value;if(S.adv==='major')S.advTrack=S.track;}
+  else if(k==='advTrack'){S.advTrack=t.value;}
+  else if(k==='tkId'){S.tkId=t.value;}
+  else if(k==='sem'){S.sem=Math.max(1,Math.min(4,+t.value||1));}
+  else if(k==='vol'||k==='warn'){S[k]=Math.max(0,+t.value||0);}
+  saveState();renderAll();
+}
+function boot(){
+  loadState();
+  if(!TR[S.track]||TR[S.track].dept!==S.dept)S.track=Object.keys(TR).filter(function(x){return TR[x].dept===S.dept;})[0];
+  document.addEventListener('click',onClick);
+  document.addEventListener('change',onChange);
+  document.addEventListener('toggle',onToggle,true);
+  document.addEventListener('input',onInput);
+  document.addEventListener('keydown',onKey);
+  renderAll();
+}
+if(typeof document!=='undefined'&&document.getElementById('panels'))boot();
+
+function tagHtml(c){
+  return c.tags.map(function(t){
+    if(t==='R'||t==='H'||t==='G')return '<span class="tag '+t+'" title="'+t+'코드 과목">'+t+'코드</span>';
+    return '<span class="tag">'+esc(t)+'</span>';
+  }).join('');
+}
+
+function segHtml(id,v,label){
+  const b=function(n,t){return '<button type="button" data-act="st" data-id="'+id+'" data-v="'+n+'" aria-pressed="'+(v===n)+'">'+t+'</button>';};
+  return '<div class="seg" role="group" aria-label="'+esc(label)+' 이수 상태">'+b(0,'미이수')+b(1,'이수')+b(2,'수강 중')+'</div>';
+}
+
+function rowGen(id,name,cr,tags){
+  const v=S.st[id]|0;
+  return '<div class="crs s'+v+'"><div class="nm">'+esc(name)+tags+'<span class="c">'+cr+'학점</span></div><div class="cr num">'+cr+'학점</div>'+segHtml(id,v,name)+'</div>';
+}
+
+function rowHtml(id){const c=C[id];return rowGen(id,c.name,c.cr,tagHtml(c));}
+
+function rowsHtml(ids){return ids.map(rowHtml).join('');}
+
+function okNo(rem){return rem<=0?'<span class="pill ok">충족</span>':'<span class="pill no">'+rem+'학점 남음</span>';}
+
+function detailsHtml(key,title,meta,inner,openDefault){
+  const open=(key in S.ui.open)?S.ui.open[key]:!!openDefault;
+  return '<details class="grp" data-k="'+key+'"'+(open?' open':'')+'><summary>'+title+(meta?' <span class="pill">'+meta+'</span>':'')+'</summary>'+inner+'</details>';
+}
+
+function pickBox(label,ids){return '<div class="pickbox"><div class="lab">'+esc(label)+'</div>'+rowsHtml(ids)+'</div>';}
+
+function ledgerRow(name,sub,d,i){
+  const t=Math.max(1,d.t);
+  const done=Math.max(0,t-d.rem),prog=Math.max(0,d.rem-i.rem);
+  const pd=Math.min(100,done/t*100),pp=Math.min(100-pd,prog/t*100);
+  return '<div class="lrow"><div class="nm">'+name+'<small>'+sub+'</small></div>'+
+    '<div class="track" role="img" aria-label="'+name+' 진행: 이수 '+done+'학점, 수강 중 '+prog+'학점, 남음 '+i.rem+'학점"><i class="d" style="width:'+pd+'%"></i><i class="p" style="width:'+pp+'%"></i></div>'+
+    '<div class="rt num"><b>'+d.rem+'</b> 남음 <br>'+(prog>0?'수강 중 반영 시 '+i.rem:'요구 '+d.t+'학점')+'</div></div>';
+}
+
+function tabsList(){
+  const t=[['start','설정'],['gy','교양'],['ma','일반학전공'],['po','경찰학전공']];
+  if(S.adv==='track')t.push(['tk','융복합트랙']);
+  t.push(['xt','인정학점'],['nc','졸업요건(학점 외)'],['rem','남은 과목']);
+  return t;
+}
+
+function renderTabs(R){
+  const tabsEl=document.getElementById('tabs');
+  if(tabsEl.style)tabsEl.style.display=Q?'none':'';
+  if(Q){tabsEl.innerHTML='';return;}
+  const r=S.inc?R.i:R.d;
+  const nc=ncLeft();
+  const cnts={gy:r.gy.rem,ma:r.ma.rem,po:r.po.rem,nc:nc,rem:r.total};
+  if(S.adv==='track'&&r.tk)cnts.tk=r.tk.rem;
+  document.getElementById('tabs').innerHTML=tabsList().map(function(t){
+    const c=cnts[t[0]];
+    const badge=(c===undefined)?'':'<span class="cnt'+(c===0?' z':'')+'">'+(c===0?'완료':c+(t[0]==='nc'?'건':'학점'))+'</span>';
+    return '<button type="button" role="tab" data-act="tab" data-tab="'+t[0]+'" aria-selected="'+(S.ui.tab===t[0])+'">'+t[1]+badge+'</button>';
+  }).join('');
+}
+
+function trackCalc(cnt,dept,otherReq){
+  const t=TRK[S.tkId];if(!t)return null;
+  let earned=0,missing=0,extra=0;const seen={};
+  const reqRows=[],optLeft=[];
+  const countExtra=function(o){if(seen[o.id])return;seen[o.id]=1;if(o.isTk||otherReq.indexOf(o.ref)>=0)extra+=o.cr;};
+  t.rows.forEach(function(rw){
+    if(rw.dept&&rw.dept!==dept)return;
+    if(rw.pick){
+      const done=rw.opts.filter(function(o){return cnt(o.id);});
+      const left=rw.opts.filter(function(o){return !cnt(o.id);}).map(function(o){return {n:o.n,cr:o.cr};});
+      done.slice(0,rw.pick).forEach(function(o){earned+=o.cr;countExtra(o);});
+      const sh=Math.max(0,rw.pick-done.length);
+      if(rw.req&&sh>0){
+        const mc=Math.min.apply(null,rw.opts.map(function(o){return o.cr;}));
+        missing+=sh*mc;
+        reqRows.push({n:rw.label,cr:sh*mc,tag:'택'+rw.pick,note:sh+'과목 더 필요',opts:left});
+      }else if(!rw.req&&sh>0){left.forEach(function(o){optLeft.push(o);});}
+    }else{
+      if(cnt(rw.id)){earned+=rw.cr;countExtra(rw);}
+      else if(rw.req){missing+=rw.cr;reqRows.push({n:rw.n,cr:rw.cr,tag:'필수'});}
+      else optLeft.push({n:rw.n,cr:rw.cr});
+    }
+  });
+  const gap=Math.max(0,t.need-earned);
+  const rem=Math.max(missing,gap);
+  return {t:t,earned:earned,need:t.need,rem:rem,missing:missing,extraGap:Math.max(0,gap-missing),reqRows:reqRows,optLeft:optLeft,extra:extra};
+}
+
+function trackRowsHtml(t,dept){
+  let h='';
+  t.rows.forEach(function(rw){
+    if(rw.dept&&rw.dept!==dept)return;
+    if(rw.pick){
+      let inner='<div class="pickbox"><div class="lab">'+esc(rw.label)+(rw.req?' (필수 선택)':' (선택)')+'</div>';
+      rw.opts.forEach(function(o){inner+=rowGen(o.id,o.n,o.cr,trackTags(o,null));});
+      h+=inner+'</div>';
+    }else{
+      h+=rowGen(rw.id,rw.n,rw.cr,trackTags(rw,rw));
+    }
+  });
+  return h;
+}
+
+function trackTags(o,rw){
+  let s='';
+  if(rw&&rw.req)s+='<span class="tag">'+esc(rw.tag||'필수')+'</span>';
+  if(o.y)s+='<span class="tag">'+esc(o.y)+'학년</span>';
+  if(o.isTk)s+='<span class="tag">트랙 전용</span>';
+  return s;
+}
+
+function panelTk(R){
+  const r=S.inc?R.i:R.d;
+  const dept=r.ma.dept;
+  let h='<div class="card"><h2>융복합트랙 선택 <span class="tg">2026학년도 개설 12개 트랙</span></h2><p class="note">지원해서 선발된 트랙을 고르세요. 트랙 지정 과목 중 교양·전공 일반 과목은 다른 탭의 같은 과목과 이수 상태가 함께 바뀝니다.</p><div class="tkpick">';
+  TRACKS.forEach(function(t){
+    h+='<label class="opt'+(S.tkId===t.id?' on':'')+'"><input type="radio" name="tkId" data-set="tkId" value="'+t.id+'"'+(S.tkId===t.id?' checked':'')+'><span>'+esc(t.name)+(t.isNew?' <span class="tag new">신설</span>':'')+'<small>담당 '+esc(t.prof)+' 교수</small></span></label>';
+  });
+  h+='</div></div>';
+  const t=TRK[S.tkId];
+  if(t&&r.tk){
+    h+='<div class="card"><h2>'+esc(t.name)+' 트랙 '+(r.tk.rem<=0?'<span class="pill ok">충족</span>':'<span class="pill no">'+r.tk.rem+'학점 남음</span>')+'<span class="tg">이수 '+r.tk.earned+' / 학점 계 '+r.tk.need+(/12|14/.test(String(t.need))&&(t.id==='forensic'||t.id==='ds')?' 이상':'')+'</span></h2>';
+    h+='<p class="note">'+esc(t.desc)+'</p>';
+    h+='<h3>지정 과목 <span class="need">학점·권장 학년은 트랙 안내 표 기준</span></h3>'+trackRowsHtml(t,dept);
+    if(t.notes.length)h+='<ul class="bul">'+t.notes.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>';
+    h+='<h3>논문 대체 활동 <span class="need">다음 중 택 1 · 논문활동 Ⅰ·Ⅱ 2학점으로 인정</span></h3><ul class="bul">'+t.thesis.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>';
+    h+='<label class="ncl"><input type="checkbox" data-act="nc" data-k="tkth"'+(S.nc.tkth?' checked':'')+'><div><div class="tt">논문 대체 활동을 마쳤습니다</div><div class="ss">졸업요건 탭의 체크 항목에도 반영됩니다. 결과보고서는 4학년 2학기 11월 말까지 제출합니다.</div></div></label>';
+    h+='<p class="note">트랙 지정 과목 중 일반 교과목 목록에 없는 과목(트랙 전용, 편입 교양에 없는 과목 포함)은 전공선택 학점으로 계산합니다. 전공기초·경찰학선택 과목은 해당 영역 학점으로 계산합니다. 이 구분은 안내 문서에 명시가 없는 가정입니다.</p></div>';
+  }else{
+    h+='<div class="card"><p class="note">위에서 트랙을 선택하면 지정 과목, 남은 학점, 논문 대체 활동이 표시됩니다.</p></div>';
+  }
+  return h;
+}
+
+function chipsHtml(opts){
+  if(!opts||!opts.length)return '';
+  const inner='<div class="chips">'+opts.map(function(o){return '<span class="chip">'+esc(o.n)+(o.cr?' '+o.cr+'학점':'')+'</span>';}).join('')+'</div>';
+  if(opts.length>8)return '<details class="cand"><summary>고를 수 있는 과목 '+opts.length+'개 보기</summary>'+inner+'</details>';
+  return '<div class="note" style="margin:6px 0 0">고를 수 있는 과목</div>'+inner;
+}
+
+function tagCls(t){
+  if(t==='필수')return 'req';
+  if(t==='졸업요건'||t==='특례')return 'ok';
+  if(/^택/.test(t)||t==='선택')return 'pk';
+  return '';
+}
+
+function remRow(x){
+  const cr=x.cr>0?x.cr+'학점':(x.cr<0?x.cr+'학점':'');
+  return '<div class="rr"><span class="tg '+tagCls(x.tag)+'">'+esc(x.tag||'')+'</span><div><div class="nm">'+esc(x.n)+'</div>'+(x.note?'<div class="nt">'+esc(x.note)+'</div>':'')+chipsHtml(x.opts)+'</div><div class="cr num'+(x.cr<0?' neg':'')+'">'+cr+'</div></div>';
+}
+
+function remCard(title,sub,total,groups,extraNote){
+  const gs=groups.filter(function(g){return g.rows.length>0;});
+  let h='<div class="card"><div class="rc-h"><h2>'+esc(title)+(sub?' <span class="tg">'+esc(sub)+'</span>':'')+'</h2><div class="rc-n num'+(total<=0?' z':'')+'">'+(total<=0?'<b>충족</b>':'남은 학점 <b>'+total+'</b>학점')+'</div></div>';
+  if(extraNote)h+='<p class="note">'+esc(extraNote)+'</p>';
+  if(total<=0&&!gs.length)h+='<div class="done-msg">이 영역은 모두 채웠습니다.</div>';
+  gs.forEach(function(g){
+    h+='<div class="rg"><div class="rg-h"><span class="t">'+esc(g.t)+'</span><span class="s num">'+(g.rem>0?g.rem+'학점 남음':'')+'</span></div>'+g.rows.map(remRow).join('')+'</div>';
+  });
+  return h+'</div>';
+}
+
+function hl(name,q){
+  const i=q?name.toLowerCase().indexOf(q.toLowerCase()):-1;
+  if(i<0)return esc(name);
+  return esc(name.slice(0,i))+'<mark>'+esc(name.slice(i,i+q.length))+'</mark>'+esc(name.slice(i+q.length));
+}
+
+function resRow(it,q){
+  const v=S.st[it.id]|0;
+  const cat=it.cat+(it.mem?(it.cat?' · ':'')+it.mem:'');
+  return '<div class="crs s'+v+'"><div class="nm">'+hl(it.name,q)+tagHtml({tags:it.tags})+'<span class="c">'+it.cr+'학점</span><div class="cat">'+esc(cat)+'</div></div><div class="cr num">'+it.cr+'학점</div>'+segHtml(it.id,v,it.name)+'</div>';
+}
+
+function renderPanels(R){
+  const map={start:panelStart,gy:panelGy,ma:panelMa,po:panelPo,tk:panelTk,xt:panelXt,nc:panelNc,rem:panelRem};
+  fixUi();
+  if(Q){document.getElementById('panels').innerHTML=panelSearch(R);return;}
+  const t=S.ui.tab;
+  document.getElementById('panels').innerHTML='<div class="panel on" role="tabpanel">'+(map[t]||panelStart)(R)+'</div>';
+}
+
+function renderAll(){
+  const R={d:compute(S,false),i:compute(S,true)};
+  renderBar(R);renderHero(R);renderTabs(R);renderPanels(R);
+}
+
+function onToggle(ev){
+  const d=ev.target;
+  if(d&&d.tagName==='DETAILS'&&d.getAttribute('data-k')){S.ui.open[d.getAttribute('data-k')]=d.open;saveState();}
+}
+
+function clearQ(){Q='';QF='all';const q=document.getElementById('q');if(q)q.value='';}
+
+function onInput(ev){const t=ev.target;if(t&&t.id==='q'){Q=t.value.trim();if(!Q)QF='all';renderAll();}}
+
+function onKey(ev){if(ev.key==='Escape'&&Q){clearQ();renderAll();}}
+</script>
+</body>
+</html>
